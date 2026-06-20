@@ -41,6 +41,13 @@
         .admin-drag-item {
             touch-action: none;
         }
+        /* Gestreifter Rahmen für das Element, das gerade bewegt wird */
+        .admin-drag-item.dragging {
+            opacity: 0.5;
+            border-style: dashed;
+            border-color: #f28d22;
+            background-color: #fdfaf7;
+        }
     </style>
 </head>
 <body class="text-slate-800 flex flex-col min-h-screen relative">
@@ -259,14 +266,14 @@
         <!-- TAB 3: MODULE-VERWALTUNG -->
         <div id="tab-content-admin" class="hidden space-y-6">
             
-            <!-- 1. DRAG & DROP BOARD (JETZT AN ERSTER STELLE) -->
+            <!-- 1. DRAG & DROP BOARD -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4 overflow-hidden">
                 <div>
                     <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                         <i data-lucide="shuffle" class="text-brand-orange w-5 h-5"></i>
                         Jahrgangs-Zuordnung anpassen (Drag & Drop)
                     </h2>
-                    <p class="text-xs text-slate-500 mt-1">Ziehen Sie die Module einfach per Maus in eine andere Jahrgangsstufe. Änderungen werden sofort gespeichert.</p>
+                    <p class="text-xs text-slate-500 mt-1">Ziehen Sie die Module einfach per Maus in eine andere Jahrgangsstufe oder ändern Sie die Reihenfolge. Der globale Filter oben filtert das Board in Echtzeit.</p>
                 </div>
 
                 <!-- Horizontal scrollable container for Kanban board -->
@@ -319,7 +326,7 @@
                 </div>
             </div>
 
-            <!-- 2. NEUEN BAUSTEIN ERSTELLEN (JETZT AN ZWEITER STELLE - OHNE ICONS) -->
+            <!-- 2. NEUEN BAUSTEIN ERSTELLEN -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md">
                 <div class="border-b border-slate-100 pb-3 mb-4">
                     <h2 class="text-lg font-bold text-slate-900">
@@ -430,7 +437,7 @@
         </div>
     </div>
 
-    <!-- NEU: MODAL FÜR LÖSCH-BESTÄTIGUNG (LEHRPLAN-BAUSTEINE) -->
+    <!-- MODAL FÜR LÖSCH-BESTÄTIGUNG (LEHRPLAN-BAUSTEINE) -->
     <div id="delete-module-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
             <div class="flex items-start gap-3">
@@ -445,6 +452,26 @@
             <div class="flex items-center justify-end gap-2 pt-1">
                 <button id="btn-delete-module-modal-cancel" class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer">Abbrechen</button>
                 <button id="btn-delete-module-modal-confirm" class="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors cursor-pointer">Ja, löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FÜR ERFOLGREICHE ERSTELLUNG EINES NEUEN BAUSTEINS -->
+    <div id="success-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+                    <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Baustein erstellt!</h3>
+                    <p class="text-xs text-slate-500 mt-1">
+                        Der Lehrplan-Baustein <span id="success-modal-module-name" class="font-semibold text-slate-800"></span> wurde erfolgreich für die <span id="success-modal-grade-name" class="font-semibold text-slate-800"></span> angelegt.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end pt-1">
+                <button id="btn-success-modal-ok" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer">Verstanden</button>
             </div>
         </div>
     </div>
@@ -479,14 +506,14 @@
                 { id: "5_rech", name: "📖 Recherche Buch 1: Altersgemäße Informationsbeschaffung", dept: "LeKo", area: "lesekonzept", buildOn: "5_lese", notes: "Kombinierte Informationssuche in Bibliothek, Suchmaschinen und Online-Lexika.", linkDrive: null, linkMebis: "https://lernplattform.bycs.de/course/section.php?id=4713933" }, 
                 { id: "5_pwd", name: "🍏 Verwendung des internen Passwort-Managers ('Schlüsselbund')", dept: "Allg.", area: "soziales", buildOn: "5_tab", notes: "Sichere Verwahrung schulinterner Zugangsdaten direkt auf dem Endgerät.", linkDrive: null, linkMebis: null },
                 { id: "5_drive", name: "🟧 Arbeit mit ByCS Drive", dept: "Allg.", area: "soziales", buildOn: "5_pwd", notes: "Nutzung des zentralen bayerischen Cloud-Speichers für den Dateiaustausch.", linkDrive: null, linkMebis: null },
-                { id: "5_clip", name: "🍏 Arbeiten mit die Zwischenablage (z. B. Teilen-Dialog am iPad)", dept: "Allg.", area: "soziales", buildOn: "5_tab", notes: "Inhalte kopieren und flexibel via AirDrop oder Systemmenü weitergeben.", linkDrive: null, linkMebis: null },
-                { id: "5_rsb", name: "🍏 Arbeit mit die Kommunikationsplattform RSBintern auf dem iPad", dept: "Allg.", area: "soziales", buildOn: "5_pwd", notes: "Umgang mit schulinternen Mails und Kommunikationskanälen.", linkDrive: null, linkMebis: null }, 
+                { id: "5_clip", name: "🍏 Arbeiten mit der Zwischenablage (z. B. Teilen-Dialog am iPad)", dept: "Allg.", area: "soziales", buildOn: "5_tab", notes: "Inhalte kopieren und flexibel via AirDrop oder Systemmenü weitergeben.", linkDrive: null, linkMebis: null },
+                { id: "5_rsb", name: "🍏 Arbeit mit der Kommunikationsplattform RSBintern auf dem iPad", dept: "Allg.", area: "soziales", buildOn: "5_pwd", notes: "Umgang mit schulinternen Mails und Kommunikationskanälen.", linkDrive: null, linkMebis: null }, 
                 { id: "5_bycs", name: "🟧 Arbeit mit ByCS Lernplattform auf dem iPad", dept: "Allg.", area: "soziales", buildOn: "5_pwd", notes: "Nutzung von mebis Kursstrukturen und Bearbeitung digitaler Aufgaben.", linkDrive: null, linkMebis: null },
                 { id: "5_steck", name: "🖼 Steckbrief", dept: "Bio", area: "soziales", buildOn: "5_drive", notes: "Erstellung und Gestaltung eines biologischen Steckbriefs als erstes digitales Lernprodukt.", linkDrive: null, linkMebis: "https://lernplattform.bycs.de/course/section.php?id=3980830" }, 
                 { id: "5_wand", name: "🖼 Wandzeitung", dept: "Mu", area: "soziales", buildOn: null, notes: "Mediale und visuelle Aufbereitung von Musikthemen im Team.", linkDrive: null, linkMebis: "https://lernplattform.bycs.de/course/section.php?id=3880847" },
                 { id: "5_lap", name: "🖼 Lapbook", dept: "Geo", area: "soziales", buildOn: null, notes: "Kreative haptisch-digitale Synthese erarbeiteter geografischer Inhalte.", linkDrive: null, linkMebis: "https://lernplattform.bycs.de/course/section.php?id=4004065" },
                 { id: "5_media", name: "🍏 Fotos, Screenshots, Videos aufnehmen, abspeichern und bearbeiten", dept: "Allg.", area: "soziales", buildOn: "5_scr", notes: "Erweiterte Medienbearbeitung (Zuschneiden, Markieren, Komprimieren).", linkDrive: null, linkMebis: null },
-                { id: "5_copy", name: "Medienführerschein Bayern: Das ist meine Geschichte", dept: "IT", area: "soziales", buildOn: null, notes: "Glundlagen zum Schutz von geistigem Eigentum kennenlernen und verstehen.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/grundschule/3-und-4-jahrgangsstufe/das-ist-meine-geschichte" }
+                { id: "5_copy", name: "Medienführerschein Bayern: Das ist meine Geschichte", dept: "IT", area: "soziales", buildOn: null, notes: "Grundlagen zum Schutz von geistigem Eigentum kennenlernen und verstehen.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/grundschule/3-und-4-jahrgangsstufe/das-ist-meine-geschichte" }
             ],
             6: [
                 { id: "6_copy", name: "Medienführerschein Bayern: Das ist meine Geschichte", dept: "IT", area: "soziales", buildOn: null, notes: "Grundlagen zum Schutz von geistigem Eigentum kennenlernen und verstehen.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/grundschule/3-und-4-jahrgangsstufe/das-ist-meine-geschichte" }, 
@@ -503,9 +530,9 @@
                 { id: "7_proj", name: "🖼 Erstellung von Projektdokumentationen unter Anwendung ausgewählter Programme", dept: "EG", area: "medien", buildOn: "6_flyer", notes: "Formale und funktionale Kriterien für strukturierte Berichte der Ausbildungszweige IIIa und Ernährung und Gesundheit.", linkDrive: null, linkMebis: null }, 
                 { id: "7_www2", name: "💻 Recherche WWW 2: kritisches Filtern & eigenständiges Suchen", dept: "Geo", area: "lesekonzept", buildOn: "6_www", notes: "Lehrplanbereich IT 1.4. Vertiefte Filterung von Internet-Ergebnissen und eigenständige Recherchestrategien im Fach Geographie.", linkDrive: null, linkMebis: null },
                 { id: "7_soc", name: "👬 Verantwortungsvolle Nutzung von Social Media", dept: "IT", area: "medien", buildOn: "6_neti", notes: "Etablierung fächerübergreifender Kommunikationsregeln, Feedbackprozesse und nachhaltiger Verhaltensweisen im Netz.", linkDrive: null, linkMebis: null },
-                { id: "7_audio", name: "🖼 Audioprodukte", dept: "E", area: "medien", buildOn: null, notes: "Kreative Synthese fremdsprachlicher Inhalte durch eigene Audio-Aufnahmen, Podcasts oder Dialogsequenzen.", linkDrive: null, linkMebis: null },
+                { id: "7_audio", name: "🖼 Audioprodukte", dept: "E", area: "medien", buildOn: null, notes: "Kreative Synthese fächerübergreifender Inhalte durch eigene Audio-Aufnahmen, Podcasts oder Dialogsequenzen.", linkDrive: null, linkMebis: null },
                 { id: "7_fake", name: "Medienführerschein Bayern: Fakt oder Fake? Glaubwürdigkeit von Online-Quellen prüfen und bewerten", dept: "Allg.", area: "medien", buildOn: "7_www2", notes: "Kritisches Instrumentarium zum Entlarven manipulativer Netzinhalte, Deepfakes und Falschmeldungen.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/5-6-und-7-jahrgangsstufe/fakt-oder-fake" },
-                { id: "7_netz1", name: "Medienführerschein Bayern: Ich im Netz I – Inhalte in Social-Media-Angeboten reflektieren und bewerten", dept: "Ku", area: "medien", buildOn: "7_soc", notes: "Visuelle Selbstdarstellung auf Online-Plattformen und bewusster Umgang mit Likes und trends.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/5-6-und-7-jahrgangsstufe/ich-im-netz-i" },
+                { id: "7_netz1", name: "Medienführerschein Bayern: Ich im Netz I – Inhalte in Social-Media-Angeboten reflektieren und bewerten", dept: "Ku", area: "medien", buildOn: "7_soc", notes: "Visuelle Selbstdarstellung auf Online-Plattformen und bewusster Umgang mit Likes und Trends.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/5-6-und-7-jahrgangsstufe/ich-im-netz-i" },
                 { id: "7_mob", name: "Medienführerschein Bayern: Ich im Netz II – Cyber-Mobbing in Social-Media-Angeboten thematisieren und vorbeugen", dept: "IT", area: "medien", buildOn: "7_soc", notes: "Präventionsstrategien zur Deeskalation, rechtliche Grauzonen und aktive Hilfestellungen im Ernstfall im Verbundprojekt.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/5-6-und-7-jahrgangsstufe/ich-im-netz-ii" }
             ],
             8: [
@@ -515,7 +542,7 @@
                 { id: "8_portfolio", name: "🖼 Portfolio", dept: "IT", area: "verantwortung", buildOn: null, notes: "Digitale Dokumentation und Reflexion des eigenen Lernfortschritts im Fach Informationstechnologie.", linkDrive: null, linkMebis: "https://lernplattform.bycs.de/course/section.php?id=4287591" },
                 { id: "8_public", name: "🖼 Präsentation und Publikation für die Öffentlichkeit", dept: "Allg.", area: "verantwortung", buildOn: null, notes: "Aufbereitung von Unterrichtsinhalten für Webseite, One-Pager, Podcast, Jahresbericht oder Schülerzeitung.", linkDrive: null, linkMebis: null },
                 { id: "8_urheber", name: "Medienführerschein Bayern: Ich als Urheber", dept: "Ch", area: "verantwortung", buildOn: null, notes: "Urheberrechte im Netz kennen, reflektieren und geistiges Eigentum respektieren.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/8-9-und-10-jahrgangsstufe/ich-als-urheber" },
-                { id: "8_recht_netz", name: "Medienführerschein Bayern: Ich im Netz III", dept: "WR", area: "verantwortung", buildOn: null, notes: "Rechtliche Grundlagen digitaler Interaktionen kennenlernen, verstehen und reflektieren.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/8-9-und-10-jahrgangsstufe/ich-im-netz-iii" }
+                { id: "8_recht_netz", name: "Medienführerschein Bayern: Ich im Netz III", dept: "WR", area: "verantwortung", buildOn: null, notes: "Rechtliche Grundlagen digitaler Interaktionen kennenlernen, verstehen und reflektieren.", linkDrive: null, linkMebis: "https://www.medienfuehrerschein.bayern/angebot/schule/weiterfuehrende-schulen/8-9-und-10-jahrgangsstufe/ich-als-urheber" }
             ],
             9: [
                 { id: "9_voll", name: "Vollständige Projektdokumentation", dept: "IT", area: "verantwortung", buildOn: "8_portfolio", notes: "Abschlussberichte und Prüfungsrelevanz.", linkDrive: null, linkMebis: null }, 
@@ -565,6 +592,12 @@
         const btnDeleteModuleModalCancel = document.getElementById('btn-delete-module-modal-cancel');
         const btnDeleteModuleModalConfirm = document.getElementById('btn-delete-module-modal-confirm');
 
+        // Modal-Elemente (Baustein-Erstellungs-Erfolg)
+        const successModalOverlay = document.getElementById('success-modal-overlay');
+        const successModalModuleName = document.getElementById('success-modal-module-name');
+        const successModalGradeName = document.getElementById('success-modal-grade-name');
+        const btnSuccessModalOk = document.getElementById('btn-success-modal-ok');
+
         // Floating Widgets
         const scrollNavigationAside = document.getElementById('scroll-navigation-aside');
         const btnToTheTop = document.getElementById('btn-to-the-top');
@@ -603,10 +636,11 @@
             });
         }
 
-        // RE-RENDER EVENT BEI FACH-FILTERUNG
+        // RE-RENDER EVENTS BEI ÄNDERUNG DES GLOBALEN FILTERS
         globalSubjectFilter.addEventListener('change', () => {
             if (classSelect.value) { renderCurriculumTable(); }
             if (currentActiveTab === 'knowledge') { renderKnowledgeBase(); }
+            if (currentActiveTab === 'admin') { renderAdminBoard(); }
         });
 
         // TAB-NAVIGATIONSLOGIK (Drei-Tab-System)
@@ -722,11 +756,31 @@
         });
         deleteModuleModalOverlay.addEventListener('click', (e) => { if (e.target === deleteModuleModalOverlay) closeDeleteModuleModal(); });
 
+        // --- MODAL SYSTEM (ERSTELLUNGS-ERFOLG) ---
+        function openSuccessModal(name, grade) {
+            successModalModuleName.textContent = name;
+            successModalGradeName.textContent = `Jahrgangsstufe ${grade}`;
+            successModalOverlay.classList.remove('pointer-events-none', 'opacity-0');
+            successModalOverlay.firstElementChild.classList.remove('scale-95');
+            successModalOverlay.firstElementChild.classList.add('scale-100');
+            btnSuccessModalOk.focus();
+        }
+
+        function closeSuccessModal() {
+            successModalOverlay.classList.add('pointer-events-none', 'opacity-0');
+            successModalOverlay.firstElementChild.classList.remove('scale-100');
+            successModalOverlay.firstElementChild.classList.add('scale-95');
+        }
+
+        btnSuccessModalOk.addEventListener('click', closeSuccessModal);
+        successModalOverlay.addEventListener('click', (e) => { if (e.target === successModalOverlay) closeSuccessModal(); });
+
         // Globaler Keydown Listener für Esc
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (!deleteModalOverlay.classList.contains('opacity-0')) closeDeleteModal();
                 if (!deleteModuleModalOverlay.classList.contains('opacity-0')) closeDeleteModuleModal();
+                if (!successModalOverlay.classList.contains('opacity-0')) closeSuccessModal();
             }
         });
 
@@ -991,10 +1045,11 @@
             }
         }
 
-        // --- ADMIN BOARD RENDERN & DRAG & DROP (TAB 3) ---
+        // --- ADMIN BOARD RENDERN & DRAG & DROP WITH LIVE FILTERING (TAB 3) ---
 
         function renderAdminBoard() {
             const grades = [5, 6, 7, 8, 9, 10];
+            const selectedSubject = globalSubjectFilter.value;
             
             grades.forEach(grade => {
                 const col = document.querySelector(`.admin-drag-col[data-grade="${grade}"]`);
@@ -1005,13 +1060,18 @@
                 container.innerHTML = '';
                 
                 const modules = curriculumData[grade] || [];
-                countBadge.textContent = modules.length;
+                
+                // Berechne die Anzahl der sichtbar gefilterten Module für diese Spalte
+                const visibleCount = modules.filter(mod => selectedSubject === "ALL" || mod.dept === selectedSubject).length;
+                countBadge.textContent = visibleCount;
                 
                 modules.forEach(mod => {
+                    const isMatch = (selectedSubject === "ALL" || mod.dept === selectedSubject);
                     const currentCfg = areaConfig[mod.area] || { bgHex: "#f28d22", fontColor: "#ffffff" };
                     const div = document.createElement('div');
                     
-                    div.className = "admin-drag-item bg-white p-3 rounded-lg border border-slate-200 shadow-2xs cursor-grab active:cursor-grabbing hover:border-slate-300 transition-all select-none";
+                    // Verleihe ausgeblendeten Modulen die "hidden"-Klasse
+                    div.className = "admin-drag-item bg-white p-3 rounded-lg border border-slate-200 shadow-2xs cursor-grab active:cursor-grabbing hover:border-slate-300 transition-all select-none" + (isMatch ? "" : " hidden");
                     div.setAttribute('draggable', 'true');
                     div.setAttribute('data-id', mod.id);
                     div.setAttribute('data-grade', grade);
@@ -1044,67 +1104,105 @@
             lucide.createIcons();
         }
 
+        // BERECHNET DEN EINTRAGS-PUNKT INNERHALB DER SPALTE BASIEREND AUF DER MAUS-Y-KOORDINATE
+        // Ignoriert ausgeblendete (.hidden) Elemente während des Drags vollkommen!
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.admin-drag-item:not(.dragging):not(.hidden)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // REKONSTRUIERT DIE INTERNE REIHENFOLGE DIREKT AUS DER AKTUELLEN VISUELLEN DOM-SORTIERUNG
+        // Da ausgeblendete Fächer als ".hidden" im DOM verbleiben, bleiben sie beim Umsortieren erhalten!
+        function rebuildCurriculumFromDOM() {
+            const moduleLookup = {};
+            // Alle aktuellen Module flach mappen, um Originaldaten zu behalten
+            Object.values(curriculumData).flat().forEach(mod => {
+                if (mod && mod.id) {
+                    moduleLookup[mod.id] = mod;
+                }
+            });
+
+            const grades = [5, 6, 7, 8, 9, 10];
+            const newCurriculumData = {};
+
+            grades.forEach(grade => {
+                newCurriculumData[grade] = [];
+                const col = document.querySelector(`.admin-drag-col[data-grade="${grade}"]`);
+                if (col) {
+                    // Wichtig: Wählt alle aus (auch unsichtbare), damit kein Datenverlust stattfindet!
+                    const items = col.querySelectorAll('.admin-drag-item');
+                    items.forEach(item => {
+                        const id = item.getAttribute('data-id');
+                        const originalMod = moduleLookup[id];
+                        if (originalMod) {
+                            newCurriculumData[grade].push(originalMod);
+                        }
+                    });
+                }
+            });
+
+            curriculumData = newCurriculumData;
+            saveCurriculumStructure();
+        }
+
         function initDragAndDrop() {
             const dragItems = document.querySelectorAll('.admin-drag-item');
             const dragCols = document.querySelectorAll('.admin-drag-col');
 
             dragItems.forEach(item => {
                 item.addEventListener('dragstart', (e) => {
-                    item.classList.add('opacity-40');
+                    item.classList.add('dragging');
                     e.dataTransfer.setData('text/plain', item.getAttribute('data-id'));
                 });
 
                 item.addEventListener('dragend', () => {
-                    item.classList.remove('opacity-40');
+                    item.classList.remove('dragging');
+                    rebuildCurriculumFromDOM();
+                    renderAdminBoard(); // Sauberes Re-Render nach Ende des Drags (aktualisiert Counter & Struktur)
                 });
             });
 
             dragCols.forEach(col => {
-                col.addEventListener('dragover', (e) => { e.preventDefault(); });
+                col.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const container = col.querySelector('.drag-items-container');
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    const draggable = document.querySelector('.dragging');
+                    if (draggable) {
+                        if (afterElement == null) {
+                            container.appendChild(draggable);
+                        } else {
+                            container.insertBefore(draggable, afterElement);
+                        }
+                    }
+                });
 
                 col.addEventListener('dragenter', (e) => {
                     e.preventDefault();
                     col.classList.add('drag-over');
                 });
 
-                col.addEventListener('dragleave', () => { col.classList.remove('drag-over'); });
+                col.addEventListener('dragleave', () => {
+                    col.classList.remove('drag-over');
+                });
 
                 col.addEventListener('drop', (e) => {
                     e.preventDefault();
                     col.classList.remove('drag-over');
-                    const itemId = e.dataTransfer.getData('text/plain');
-                    const targetGrade = parseInt(col.getAttribute('data-grade'));
-                    
-                    if (itemId && targetGrade) { moveModuleToGrade(itemId, targetGrade); }
+                    // Das Dragend-Event oben übernimmt daraufhin das persistente Speichern
                 });
             });
         }
 
-        function moveModuleToGrade(itemId, targetGrade) {
-            let foundModule = null;
-
-            for (const grade in curriculumData) {
-                const idx = curriculumData[grade].findIndex(m => m.id === itemId);
-                if (idx !== -1) {
-                    foundModule = curriculumData[grade][idx];
-                    const sourceGrade = parseInt(grade);
-                    if (sourceGrade === targetGrade) return; 
-                    
-                    curriculumData[grade].splice(idx, 1);
-                    break;
-                }
-            }
-
-            if (foundModule) {
-                if (!curriculumData[targetGrade]) { curriculumData[targetGrade] = []; }
-                curriculumData[targetGrade].push(foundModule);
-                
-                saveCurriculumStructure();
-                renderAdminBoard();
-            }
-        }
-
-        // FORMULAR-VERARBEITUNG (ERSTELLEN)
+        // FORMULAR-VERARBEITUNG (ERSTELLEN) MIT ERSTELLE-MODAL
         addModuleForm.addEventListener('submit', (e) => {
             e.preventDefault();
             
@@ -1136,10 +1234,10 @@
             addModuleForm.reset();
             renderAdminBoard();
             
-            alert(`Baustein "${name}" erfolgreich für Jahrgang ${grade} hinzugefügt!`);
+            openSuccessModal(name, grade);
         });
 
-        // TRIGGER FÜR NEUES LÖSCH-BESTÄTIGUNGSMODAL
+        // TRIGGER FÜR LÖSCH-BESTÄTIGUNGSMODAL
         function deleteModuleEntirely(id, name) {
             openDeleteModuleModal(id, name);
         }
