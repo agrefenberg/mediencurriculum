@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediencurriculum & Lesekonzept Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Externe Datenquellen importieren mit Cache-Buster für sofortige Aktualisierung -->
+    <script src="modules.js?v=1.1"></script>
+    <script src="modules_sugg.js?v=1.1"></script>
+    <script src="lesestoff.js?v=1.1"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .brand-orange { color: #f28d22; }
+        .bg-brand-orange { background-color: #f28d22; }
+        .bg-brand-orange-hover { background-color: #e07b12; }
+        
+        /* Sanfte Animation für die didaktische Verknüpfung */
+        @keyframes highlightPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(242, 141, 34, 0); }
+            50% { transform: scale(1.02); box-shadow: 0 0 12px 3px rgba(242, 141, 34, 0.4); border-color: #f28d22; }
+        }
+        .dependency-highlight { animation: highlightPulse 2s ease-in-out 2; }
+
+        /* Scroll-Indikator */
+        .scroll-dot.active .scroll-line {
+            background-color: #f28d22 !important;
+            width: 24px;
+        }
+
+        /* Drag over visual feedback */
+        .admin-drag-col.drag-over {
+            background-color: #fef3c7 !important;
+            border-color: #f28d22 !important;
+            border-style: dashed !important;
+        }
+        .admin-drag-item {
+            touch-action: none;
+        }
+        .admin-drag-item.dragging {
+            opacity: 0.5;
+            border-style: dashed;
+            border-color: #f28d22;
+            background-color: #fdfaf7;
+        }
+
+        /* Fullscreen-Modus für das Kanban-Board */
+        .board-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            background-color: #ffffff !important;
+            padding: 24px !important;
+            overflow-y: auto !important;
+        }
+
+        /* Custom Styling für den Schieberegler im Lesekonzept */
+        .progress-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 9999px;
+            outline: none;
+            background: #e2e8f0;
+        }
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #606C85;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.1s, border-color 0.1s;
+        }
+        .progress-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            border-color: #f28d22;
+        }
+        .progress-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #606C85;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.1s, border-color 0.1s;
+        }
+        .progress-slider::-moz-range-thumb:hover {
+            transform: scale(1.15);
+            border-color: #f28d22;
+        }
+
+        /* PERFORMANCE-OPTIMIERTE EXPOLOSIONS-PARTIKEL */
+        .confetti-particle {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 2px;
+        }
+
+        /* --- PROFESSIONELLE PRINT-STYLES --- */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                font-size: 12px;
+            }
+            body > *:not(#print-layout) {
+                display: none !important;
+            }
+            #print-layout {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+                margin-bottom: 25px;
+                page-break-inside: auto;
+            }
+            .print-table tr {
+                page-break-inside: avoid;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #cbd5e1;
+                padding: 10px 12px;
+                text-align: left;
+                vertical-align: top;
+            }
+            .print-table th {
+                background-color: #606C85 !important;
+                color: #ffffff !important;
+                font-weight: bold;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-section-title {
+                font-size: 16px;
+                font-weight: bold;
+                color: #0f172a;
+                margin-top: 25px;
+                border-bottom: 2px solid #f28d22;
+                padding-bottom: 4px;
+                page-break-after: avoid;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-badge-orange {
+                background-color: #f28d22 !important;
+                color: #ffffff !important;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: bold;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-class-matrix {
+                display: inline-flex;
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+            .print-matrix-done {
+                background-color: #dcfce7 !important;
+                color: #15803d !important;
+                border: 1px solid #bbf7d0;
+                padding: 1px 5px;
+                border-radius: 3px;
+                font-weight: bold;
+                font-size: 10px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-matrix-todo {
+                background-color: #f1f5f9 !important;
+                color: #94a3b8 !important;
+                border: 1px solid #e2e8f0;
+                padding: 1px 5px;
+                border-radius: 3px;
+                font-size: 10px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-no-break {
+                page-break-inside: auto;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen relative">
+
+    <!-- HEADER MIT ERWEITERTER MAXIMALBREITE (max-w-4xl) -->
+    <header id="main-header" class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+        <div class="max-w-4xl mx-auto px-6 py-3 flex justify-between items-center w-full">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                    <i data-lucide="qr-code" class="brand-orange w-6 h-6"></i>
+                    Mediencurriculum Dashboard
+                </h1>
+                <p class="text-xs text-slate-500 mt-0.5">Schuljahr 2025/2026</p>
+            </div>
+            <div class="flex items-center">
+                <img src="img/rsb_logo_schrift_pills.svg" alt="Realschule Bessenbach Logo" class="h-14 w-auto object-contain">
+            </div>
+        </div>
+    </header>
+
+    <!-- STICKY NAVBAR MIT GEÄNDERTER REIHENFOLGE -->
+    <div id="sub-nav-bar" class="bg-white border-b border-slate-200 shadow-2xs sticky top-[73px] z-40">
+        <div class="max-w-4xl mx-auto px-6 flex flex-col md:flex-row md:items-center md:justify-between py-2 md:py-0">
+            
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <!-- Hamburger Button -->
+                <button id="btn-hamburger-menu" class="md:hidden p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer mr-3" title="Menü öffnen">
+                    <i data-lucide="menu" id="icon-hamburger" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Aktiver Tab-Name Mobile -->
+                <div class="md:hidden flex-grow flex items-center gap-2 py-1">
+                    <span id="mobile-active-tab-title" class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="check-square" class="w-4 h-4 text-brand-orange"></i> Quittierung
+                    </span>
+                </div>
+
+                <!-- Desktop Navigation (REIHENFOLGE GEÄNDERT: LESEKISTEN JETZT AN 4. STELLE) -->
+                <div class="hidden md:flex gap-4">
+                    <button id="tab-btn-checkout" class="tab-trigger py-3 text-sm font-bold border-b-2 border-brand-orange text-slate-900 flex items-center gap-2 transition-all cursor-pointer shrink-0" data-target="checkout">
+                        <i data-lucide="check-square" class="w-4 h-4 text-brand-orange"></i> Quittierung
+                    </button>
+                    <button id="tab-btn-knowledge" class="tab-trigger py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-all cursor-pointer shrink-0" data-target="knowledge">
+                        <i data-lucide="book-open" class="w-4 h-4"></i> Wissensdatenbank
+                    </button>
+                    <button id="tab-btn-admin" class="tab-trigger py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-all cursor-pointer shrink-0" data-target="admin">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Module
+                    </button>
+                    <button id="tab-btn-lesekisten" class="tab-trigger py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-all cursor-pointer shrink-0" data-target="lesekisten">
+                        <i data-lucide="book-open-check" class="w-4 h-4"></i> Lesekisten
+                    </button>
+                </div>
+            </div>
+
+            <!-- Aufklappbares Mobile-Dropdown (REIHENFOLGE GEÄNDERT) -->
+            <div id="mobile-menu-dropdown" class="hidden w-full flex-col bg-slate-50 rounded-xl border border-slate-200 p-2 mt-2 md:hidden gap-1 shadow-inner animate-fade-in">
+                <button class="mobile-tab-trigger w-full p-2.5 rounded-lg text-left text-xs font-bold bg-brand-orange text-white flex items-center gap-2" data-target="checkout">
+                    <i data-lucide="check-square" class="w-4 h-4"></i> Quittierung
+                </button>
+                <button class="mobile-tab-trigger w-full p-2.5 rounded-lg text-left text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2" data-target="knowledge">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Wissensdatenbank
+                </button>
+                <button class="mobile-tab-trigger w-full p-2.5 rounded-lg text-left text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2" data-target="admin">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Module
+                </button>
+                <button class="mobile-tab-trigger w-full p-2.5 rounded-lg text-left text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2" data-target="lesekisten">
+                    <i data-lucide="book-open-check" class="w-4 h-4"></i> Lesekisten
+                </button>
+            </div>
+            
+            <!-- Filter und Hilfsmittel rechts in der Navbar -->
+            <div id="nav-filter-controls" class="flex items-center justify-between md:justify-end gap-2 pt-2 md:pt-0 pb-2 md:pb-0 shrink-0 border-t border-slate-100 md:border-t-0 mt-1 md:mt-0">
+                <button id="btn-print-curriculum" class="text-xs p-2 font-semibold bg-white hover:bg-slate-50 border border-slate-200 rounded-md shadow-3xs cursor-pointer text-slate-700 flex items-center justify-center transition-colors" title="Gesamtes Curriculum strukturiert drucken">
+                    <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i>
+                </button>
+                <div class="h-4 w-px bg-slate-200"></div>
+                <i data-lucide="filter" class="w-3.5 h-3.5 text-slate-400"></i>
+                <select id="global-subject-filter" class="text-xs p-1.5 font-semibold bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-orange-500 shadow-3xs cursor-pointer w-full md:w-44 text-slate-700">
+                    <option value="ALL">Alle Fächer</option>
+                    <option value="Allg.">Allg. (Fächerübergreifend)</option>
+                    <option value="Bio">Bio (Biologie)</option>
+                    <option value="BwR">BwR (Wirtschaft)</option>
+                    <option value="Ch">Ch (Chemie)</option>
+                    <option value="D">D (Deutsch)</option>
+                    <option value="E">E (Englisch)</option>
+                    <option value="EG">EG (Ernährung u. Ges.)</option>
+                    <option value="F">F (Französisch)</option>
+                    <option value="G">G (Geschichte)</option>
+                    <option value="Geo">Geo (Geographie)</option>
+                    <option value="IT">IT (IT)</option>
+                    <option value="Ku">Ku (Kunst)</option>
+                    <option value="LeKo">LeKo (Lesekompetenz)</option>
+                    <option value="M">M (Mathematik)</option>
+                    <option value="Mu">Mu (Musik)</option>
+                    <option value="Ph">Ph (Physik)</option>
+                    <option value="Projekt">Projekt (Projektpräsentation)</option>
+                    <option value="PuG">PuG (Politik u. Ges.)</option>
+                    <option value="Reli/Ethik">Reli / Ethik</option>
+                    <option value="WR">WR (Wirtschaft und Recht)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN MIT MAXIMALBREITE (max-w-4xl) -->
+    <main id="main-content-container" class="flex-grow max-w-4xl w-full mx-auto px-6 py-8">
+        
+        <!-- TAB 1: QUITTIERUNG -->
+        <div id="tab-content-checkout" class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <h2 class="text-lg font-bold text-slate-900">Modul-Durchführung quittieren</h2>
+                    <p class="text-xs text-slate-500 mt-1">Wählen Sie unten die Klasse und Ihr Standard-Kürzel. Durch einfaches Tippen auf eine Tabellenzeile wird das jeweilige Modul direkt auf Ihr Kürzel quittiert.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">1. Klasse / Lerngruppe</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="btn-prev-class p-3 border border-slate-300 rounded-xl bg-white hover:border-brand-orange hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center shadow-2xs" title="Vorherige Klasse">
+                                <i data-lucide="chevron-left" class="w-5 h-5 text-slate-600"></i>
+                            </button>
+                            <select id="class-select" class="class-selector-sync w-full text-sm p-3 border border-slate-300 rounded-xl bg-white focus:outline-none focus:border-orange-500 font-semibold text-slate-900 transition-colors shadow-2xs">
+                                <option value="" disabled selected>Bitte Klasse wählen</option>
+                                <option value="5a">Klasse 5a</option><option value="5b">Klasse 5b</option><option value="5c">Klasse 5c</option>
+                                <option value="6a">Klasse 6a</option><option value="6b">Klasse 6b</option><option value="6c">Klasse 6c</option>
+                                <option value="7a">Klasse 7a</option><option value="7b">Klasse 7b</option><option value="7c">Klasse 7c</option>
+                                <option value="8a">Klasse 8a</option><option value="8b">Klasse 8b</option><option value="8c">Klasse 8c</option><option value="8d">Klasse 8d</option>
+                                <option value="9a">Klasse 9a</option><option value="9b">Klasse 9b</option><option value="9c">Klasse 9c</option>
+                                <option value="10a">Klasse 10a</option><option value="10b">Klasse 10b</option><option value="10c">Klasse 10c</option>
+                            </select>
+                            <button type="button" class="btn-next-class p-3 border border-slate-300 rounded-xl bg-white hover:border-brand-orange hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center shadow-2xs" title="Nächste Klasse">
+                                <i data-lucide="chevron-right" class="w-5 h-5 text-slate-600"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">2. Ihr Standard-Kürzel</label>
+                        <select id="teacher-select" class="w-full text-sm p-3 border border-slate-300 rounded-xl bg-white focus:outline-none focus:border-orange-500 transition-colors shadow-2xs">
+                            <!-- Wird via JavaScript befüllt -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <div id="curriculum-progress-wrapper" class="flex items-center justify-between gap-3 mb-4 hidden border-b border-slate-100 pb-3">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 shrink-0">Curriculum-Stand</label>
+                        <div class="flex items-center gap-3 w-full sm:max-w-xs justify-end ml-auto">
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200/60 shadow-inner max-w-[120px] sm:max-w-[180px]">
+                                <div id="top-progress-bar-fill" class="bg-emerald-500 h-full w-0 transition-all duration-500 ease-out rounded-full shadow-xs"></div>
+                            </div>
+                            <span id="class-progress-badge" class="text-xs font-bold text-white bg-[#606C85] px-2 py-0.5 rounded-sm font-mono shrink-0">0 von 0 erledigt</span>
+                        </div>
+                    </div>
+                    
+                    <div id="table-placeholder" class="text-center py-8 border border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-400 text-sm italic">
+                        Bitte wählen Sie eine Klasse aus, um das interaktive Curriculum zu laden.
+                    </div>
+                    <div id="table-responsive-container" class="overflow-x-auto border border-slate-200 rounded-xl hidden shadow-xs">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 w-48">Indikatoren</th>
+                                    <th class="p-3">Modulbezeichnung / Thema</th>
+                                    <th class="p-3 text-right w-56">Status / Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="curriculum-table-body" class="divide-y divide-slate-200 bg-white"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="protocol-card" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="list-checks" class="text-slate-500 w-5 h-5"></i>
+                            Erreichte Meilensteine für Klasse <span id="protocol-class-title" class="text-brand-orange uppercase"></span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5" id="counter-display">0 Module eingetragen</p>
+                    </div>
+                    <button id="btn-pdf" class="flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 text-white hover:bg-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer w-full sm:w-auto">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Entwicklungsbericht (PDF)
+                    </button>
+                </div>
+                <div class="space-y-1.5 py-1">
+                    <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+                        <span>Gemeinsamer Entwicklungsstand</span>
+                        <span id="progress-bar-text" class="text-white bg-[#606C85] px-2 py-0.5 rounded-sm font-mono text-[11px]">0 von 0 Modulen</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200/60 shadow-inner">
+                        <div id="progress-bar-fill" class="bg-emerald-500 h-full w-0 transition-all duration-500 ease-out rounded-full shadow-xs"></div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-64 overflow-y-auto border border-slate-100 rounded-xl mt-2 shadow-inner">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 sticky top-0 text-slate-600 font-bold uppercase border-b border-slate-100">
+                            <tr>
+                                <th class="p-3 w-20">Kürzel</th>
+                                <th class="p-3">Durchgeführtes Modul</th>
+                                <th class="p-3 text-right w-36">Eingetragen am</th>
+                                <th class="p-3 w-12"></th> 
+                            </tr>
+                        </thead>
+                        <tbody id="log-table-body" class="divide-y divide-slate-100 text-slate-700 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: LESEKISTEN -->
+        <div id="tab-content-lesekisten" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="book-open-check" class="text-brand-orange w-5 h-5"></i>
+                        Schulinternes Lesekonzept: Rollierende Lesekisten
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Erfassen Sie hier chronologisch den aktuellen Lesefortschritt Ihrer Klasse.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Klasse / Lerngruppe (Jahrgang 5 bis 8)</label>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btn-lese-prev-class" class="p-3 border border-slate-300 rounded-xl bg-white hover:border-brand-orange hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center shadow-2xs">
+                            <i data-lucide="chevron-left" class="w-5 h-5 text-slate-600"></i>
+                        </button>
+                        <select id="lese-class-select" class="class-selector-sync w-full text-sm p-3 border border-slate-300 rounded-xl bg-white focus:outline-none focus:border-orange-500 font-semibold text-slate-900 transition-colors shadow-2xs">
+                            <option value="" disabled selected>Bitte Klasse wählen</option>
+                            <option value="5a">Klasse 5a</option><option value="5b">Klasse 5b</option><option value="5c">Klasse 5c</option>
+                            <option value="6a">Klasse 6a</option><option value="6b">Klasse 6b</option><option value="6c">Klasse 6c</option>
+                            <option value="7a">Klasse 7a</option><option value="7b">Klasse 7b</option><option value="7c">Klasse 7c</option>
+                            <option value="8a">Klasse 8a</option><option value="8b">Klasse 8b</option><option value="8c">Klasse 8c</option><option value="8d">Klasse 8d</option>
+                        </select>
+                        <button type="button" id="btn-lese-next-class" class="p-3 border border-slate-300 rounded-xl bg-white hover:border-brand-orange hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-center shadow-2xs">
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-600"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="lese-placeholder" class="text-center py-8 border border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-400 text-sm italic">
+                        Bitte wählen Sie oben eine Klasse aus, um die zugeordneten Bücher zu laden.
+                    </div>
+                    <div id="lese-list-container" class="space-y-4 hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: WISSENSDATENBANK -->
+        <div id="tab-content-knowledge" class="hidden space-y-6 relative">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md">
+                <div class="border-b border-slate-100 pb-4 mb-4">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="library" class="text-brand-orange w-5 h-5"></i>
+                        Schulinterne Mediencurriculum-Referenz
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Hier finden Sie alle Informationen, Unterrichtsmaterialien im ByCS Drive sowie Querverweise.</p>
+                </div>
+
+                <div class="sticky top-[125px] sm:top-[115px] bg-white/95 backdrop-blur-xs py-3 z-30 border-b border-slate-100 flex gap-2 overflow-x-auto mb-6">
+                    <button onclick="handleIndicatorClick(5)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs">Jahrgang 5</button>
+                    <button onclick="handleIndicatorClick(6)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs">Jahrgang 6</button>
+                    <button onclick="handleIndicatorClick(7)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs">Jahrgang 7</button>
+                    <button onclick="handleIndicatorClick(8)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs">Jahrgang 8</button>
+                    <button onclick="handleIndicatorClick(9)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs">Jahrgang 9</button>
+                    <button onclick="handleIndicatorClick(10)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors cursor-pointer shrink-0 shadow-2xs">Jahrgang 10</button>
+                </div>
+                <div id="knowledge-base-container" class="space-y-8"></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: MODULE-VERWALTUNG (ADMIN) -->
+        <div id="tab-content-admin" class="hidden space-y-6">
+            <div id="admin-board-card" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4 overflow-hidden relative">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="shuffle" class="text-brand-orange w-5 h-5"></i>
+                            Jahrgangs-Zuordnung anpassen (Drag & Drop)
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Ziehen Sie die Module einfach per Maus in eine andere Jahrgangsstufe. Der globale Filter filtert das Board in Echtzeit.</p>
+                    </div>
+                    <button id="btn-toggle-fullscreen" class="text-xs px-3 py-2 font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 self-start transition-colors">
+                        <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                        <span id="fullscreen-text">Vollbild umschalten</span>
+                    </button>
+                </div>
+
+                <div id="kanban-scroll-wrapper" class="overflow-x-auto pb-4">
+                    <div class="flex gap-4 min-w-[1200px]">
+                        <div id="admin-grade-col-5" class="admin-drag-col flex flex-col bg-slate-50 border border-slate-200 rounded-xl p-3 w-72 shrink-0" data-grade="5">
+                            <div class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2 mb-2 flex justify-between items-center bg-slate-100/50 p-1.5 rounded">
+                                <span>Jahrgang 5</span>
+                                <span class="count-badge bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-mono">0</span>
+                            </div>
+                            <div class="drag-items-container flex-grow space-y-2 pr-1 min-h-[150px]"></div>
+                        </div>
+                        <div id="admin-grade-col-6" class="admin-drag-col flex flex-col bg-slate-50 border border-slate-200 rounded-xl p-3 w-72 shrink-0" data-grade="6">
+                            <div class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2 mb-2 flex justify-between items-center bg-slate-100/50 p-1.5 rounded">
+                                <span>Jahrgang 6</span>
+                                <span class="count-badge bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-mono">0</span>
+                            </div>
+                            <div class="drag-items-container flex-grow space-y-2 pr-1 min-h-[150px]"></div>
+                        </div>
+                        <div id="admin-grade-col-7" class="admin-drag-col flex flex-col bg-slate-50 border border-slate-200 rounded-xl p-3 w-72 shrink-0" data-grade="7">
+                            <div class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2 mb-2 flex justify-between items-center bg-slate-100/50 p-1.5 rounded">
+                                <span>Jahrgang 7</span>
+                                <span class="count-badge bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-mono">0</span>
+                            </div>
+                            <div class="drag-items-container flex-grow space-y-2 pr-1 min-h-[150px]"></div>
+                        </div>
+                        <div id="admin-grade-col-8" class="admin-drag-col flex flex-col bg-slate-50 border border-slate-200 rounded-xl p-3 w-72 shrink-0" data-grade="8">
+                            <div class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2 mb-2 flex justify-between items-center bg-slate-100/50 p-1.5 rounded">
+                                <span>Jahrgang 8</span>
+                                <span class="count-badge bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-mono">0</span>
+                            </div>
+                            <div class="drag-items-container flex-grow space-y-2 pr-1 min-h-[150px]"></div>
+                        </div>
+                        <div id="admin-grade-col-9" class="admin-drag-col flex flex-col bg-slate-50 border border-slate-200 rounded-xl p-3 w-72 shrink-0" data-grade="9">
+                            <div class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2 mb-2 flex justify-between items-center bg-slate-100/50 p-1.5 rounded">
+                                <span>Jahrgang 9</span>
+                                <span class="count-badge bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-mono">0</span>
+                            </div>
+                            <div class="drag-items-container flex-grow space-y-2 pr-1 min-h-[150px]"></div>
+                        </div>
+                        <div id="admin-grade-col-10" class="admin-drag-col flex flex-col bg-slate-50 border border-slate-200 rounded-xl p-3 w-72 shrink-0" data-grade="10">
+                            <div class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-2 mb-2 flex justify-between items-center bg-slate-100/50 p-1.5 rounded">
+                                <span>Jahrgang 10</span>
+                                <span class="count-badge bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-mono">0</span>
+                            </div>
+                            <div class="drag-items-container flex-grow space-y-2 pr-1 min-h-[150px]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-suggestions-box" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="lightbulb" class="text-amber-500 w-4 h-4"></i>
+                            Vorgeschlagene Module zur Weiterentwicklung
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Ziehen Sie diese zukunftsorientierten Vorschläge per Drag & Drop direkt nach oben in eine Spalte Ihrer Wahl.</p>
+                    </div>
+                </div>
+                <div id="suggestions-box-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 p-1 bg-slate-50 border border-slate-200 rounded-xl shadow-inner"></div>
+                <div id="suggestions-load-more-wrapper" class="flex justify-center pt-2">
+                    <button id="btn-load-more-suggestions" class="text-xs px-4 py-2 font-bold bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-xl shadow-3xs transition-all flex items-center gap-1.5 cursor-pointer">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-brand-orange"></i>
+                        <span id="load-more-text">Weitere Vorschläge anzeigen</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FLOATING ASIDES -->
+    <div id="scroll-navigation-aside" class="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 items-center z-50 hidden">
+        <div id="scroll-indicator-bar" class="flex flex-col gap-4 items-center">
+            <button onclick="handleIndicatorClick(5)" id="dot-nav-5" class="scroll-dot group flex items-center justify-end w-8 h-4 relative" data-grade="5">
+                <span class="absolute right-7 text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xs">Jg.5</span>
+                <span class="scroll-line w-3 h-0.5 bg-black rounded-full transition-all group-hover:bg-brand-orange group-hover:w-6"></span>
+            </button>
+            <button onclick="handleIndicatorClick(6)" id="dot-nav-6" class="scroll-dot group flex items-center justify-end w-8 h-4 relative" data-grade="6">
+                <span class="absolute right-7 text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xs">Jg.6</span>
+                <span class="scroll-line w-3 h-0.5 bg-black rounded-full transition-all group-hover:bg-brand-orange group-hover:w-6"></span>
+            </button>
+            <button onclick="handleIndicatorClick(7)" id="dot-nav-7" class="scroll-dot group flex items-center justify-end w-8 h-4 relative" data-grade="7">
+                <span class="absolute right-7 text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xs">Jg.7</span>
+                <span class="scroll-line w-3 h-0.5 bg-black rounded-full transition-all group-hover:bg-brand-orange group-hover:w-6"></span>
+            </button>
+            <button onclick="handleIndicatorClick(8)" id="dot-nav-8" class="scroll-dot group flex items-center justify-end w-8 h-4 relative" data-grade="8">
+                <span class="absolute right-7 text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xs">Jg.8</span>
+                <span class="scroll-line w-3 h-0.5 bg-black rounded-full transition-all group-hover:bg-brand-orange group-hover:w-6"></span>
+            </button>
+            <button onclick="handleIndicatorClick(9)" id="dot-nav-9" class="scroll-dot group flex items-center justify-end w-8 h-4 relative" data-grade="9">
+                <span class="absolute right-7 text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xs">Jg.9</span>
+                <span class="scroll-line w-3 h-0.5 bg-black rounded-full transition-all group-hover:bg-brand-orange group-hover:w-6"></span>
+            </button>
+            <button onclick="handleIndicatorClick(10)" id="dot-nav-10" class="scroll-dot group flex items-center justify-end w-8 h-4 relative" data-grade="10">
+                <span class="absolute right-7 text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xs">Jg.10</span>
+                <span class="scroll-line w-3 h-0.5 bg-black rounded-full transition-all group-hover:bg-brand-orange group-hover:w-6"></span>
+            </button>
+        </div>
+    </div>
+
+    <button id="btn-to-the-top" class="fixed right-4 bottom-6 w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-0.5 opacity-0 pointer-events-none z-50">
+        <i data-lucide="arrow-up" class="w-5 h-5"></i>
+    </button>
+
+    <!-- --- APP MODAL OVERLAYS --- -->
+    <div id="print-layout" class="hidden"></div>
+
+    <!-- LÖSCHEN PROTOKOLLEINTRAG -->
+    <div id="delete-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Eintrag löschen?</h3>
+                    <p class="text-xs text-slate-500 mt-1">Möchten Sie den Eintrag <span id="delete-modal-module-name" class="font-semibold text-slate-800"></span> wirklich dauerhaft aus dem Protokoll entfernen?</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-1">
+                <button id="btn-delete-modal-cancel" class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer">Abbrechen</button>
+                <button id="btn-delete-modal-confirm" class="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors cursor-pointer">Ja, löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LESEKONZEPT: KÜRZEL FEHLT -->
+    <div id="lese-alert-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
+                    <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Kürzel fehlt</h3>
+                    <p class="text-xs text-slate-500 mt-1">Bitte wählen Sie Ihr Lehrerkürzel im Dropdown des Buches aus, bevor Sie den Lesestand eintragen.</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end pt-1">
+                <button id="btn-lese-alert-ok" class="px-5 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-xs transition-colors cursor-pointer">Verstanden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN: BAUSTEIN ENTFERNEN -->
+    <div id="delete-module-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Baustein löschen?</h3>
+                    <p class="text-xs text-slate-500 mt-1">Möchten Sie den Lehrplan-Baustein <span id="delete-module-modal-name" class="font-semibold text-slate-800"></span> wirklich unwiderruflich aus dem gesamten Curriculum löschen?</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-1">
+                <button id="btn-delete-module-modal-cancel" class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer">Abbrechen</button>
+                <button id="btn-delete-module-modal-confirm" class="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors cursor-pointer">Ja, löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN: SPEICHERBESTÄTIGUNG -->
+    <div id="success-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+                    <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Baustein erstellt!</h3>
+                    <p class="text-xs text-slate-500 mt-1">Der Lehrplan-Baustein <span id="success-modal-module-name" class="font-semibold text-slate-800"></span> wurde erfolgreich angelegt.</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end pt-1">
+                <button id="btn-success-modal-ok" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer">Verstanden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN: NEW FORM -->
+    <div id="add-module-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-xl w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="text-brand-orange w-5 h-5"></i> Neuen Baustein hinzufügen
+                </h3>
+                <button onclick="closeAddModuleModalDirect()" class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="add-module-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Name des Moduls</label>
+                    <input type="text" id="new-mod-name" placeholder="z. B. Präsentationen mit Keynote" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Fachschaft</label>
+                    <select id="new-mod-dept" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Kompetenzbereich (schulintern)</label>
+                    <select id="new-mod-area" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                        <option value="soziales">Soziales</option><option value="medien">Medien</option><option value="verantwortung">Verantwortung</option><option value="lesekonzept">Lesekompetenz stärken</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">KMK-Kompetenzbereich</label>
+                    <select id="new-mod-kmk" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                        <option value="basis">Basis</option><option value="suchen">Suchen und Verarbeiten</option><option value="kommunizieren">Kommunizieren und Kooperieren</option><option value="produzieren">Produzieren und Präsentieren</option><option value="analysieren">Analysieren und Reflektieren</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Jahrgangsstufe</label>
+                    <select id="new-mod-grade" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                        <option value="5">Jahrgang 5</option><option value="6">Jahrgang 6</option><option value="7">Jahrgang 7</option><option value="8">Jahrgang 8</option><option value="9">Jahrgang 9</option><option value="10">Jahrgang 10</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Beschreibung / Didaktische Hinweise</label>
+                    <textarea id="new-mod-notes" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Link ByCS Drive - Optional</label>
+                    <input type="url" id="new-mod-linkdrive" class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Link ByCS-Lernplattform (mebis) - Optional</label>
+                    <input type="url" id="new-mod-linkmebis" class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                </div>
+                <div class="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeAddModuleModalDirect()" class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer">Abbrechen</button>
+                    <button type="submit" class="px-5 py-2.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer">Baustein speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL: BEARBEITEN -->
+    <div id="edit-module-modal-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 max-w-xl w-full mx-4 shadow-xl transform scale-95 transition-transform duration-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <i data-lucide="edit" class="text-brand-orange w-5 h-5"></i> Baustein bearbeiten
+                </h3>
+                <button id="btn-edit-modal-close" class="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="edit-module-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="hidden" id="edit-mod-id">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Name des Moduls</label>
+                    <input type="text" id="edit-mod-name" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Fachschaft</label>
+                    <select id="edit-mod-dept" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Kompetenzbereich (schulintern)</label>
+                    <select id="edit-mod-area" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                        <option value="soziales">Soziales</option><option value="medien">Medien</option><option value="verantwortung">Verantwortung</option><option value="lesekonzept">Lesekompetenz stärken</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">KMK-Bereich</label>
+                    <select id="edit-mod-kmk" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                        <option value="basis">Basis</option><option value="suchen">Suchen und Verarbeiten</option><option value="kommunizieren">Kommunizieren und Kooperieren</option><option value="produzieren">Produzieren und Präsentieren</option><option value="analysieren">Analysieren und Reflektieren</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Jahrgangsstufe</label>
+                    <select id="edit-mod-grade" required class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                        <option value="5">Jahrgang 5</option><option value="6">Jahrgang 6</option><option value="7">Jahrgang 7</option><option value="8">Jahrgang 8</option><option value="9">Jahrgang 9</option><option value="10">Jahrgang 10</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Beschreibung / Didaktische Hinweise</label>
+                    <textarea id="edit-mod-notes" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Link ByCS Drive - Optional</label>
+                    <input type="url" id="edit-mod-linkdrive" class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Link ByCS-Lernplattform (mebis) - Optional</label>
+                    <input type="url" id="edit-mod-linkmebis" class="w-full text-xs p-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white text-slate-800">
+                </div>
+                <div class="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" id="btn-edit-modal-cancel" class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer">Abbrechen</button>
+                    <button type="submit" class="px-5 py-2.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer">Änderungen保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-[11px] text-slate-400 mt-auto">
+        <p>&copy; 2026 Staatliche Realschule Bessenbach.</p>
+    </footer>
+
+    <script>
+        const teacherList = ["BAR", "BET", "BIE", "BÜC", "BÜT", "DIR", "GRE", "GRS", "HAR", "HAS", "HIL", "JES", "KLE", "KRE", "KUD", "MAI", "MAN", "MÜL", "NÖT", "OTT", "PAL", "PAN", "PAP", "RAS", "REI", "RÖM", "SAL", "SEB", "SEI", "SMI", "SNA", "SNL", "STA", "SUB", "UHL", "WAL", "WEI", "WIR"];
+        const classesArray = ["5a","5b","5c","6a","6b","6c","7a","7b","7c","8a","8b","8c","8d","9a","9b","9c","10a","10b","10c"];
+        const BACKEND_URL = 'save.php';
+        
+        let currentActiveTab = 'checkout';
+        let pendingDeleteId = null;         
+        let pendingDeleteModuleId = null;   
+        let isLeseLogDeletion = false;      
+        let maxVisibleSuggestions = 4; 
+
+        const areaConfig = {
+            "soziales": { title: "Soziales", bgHex: "#9cc2e5", bgLightHex: "#e0f2fe", fontColor: "#1e3a8a", borderHex: "#7dd3fc" },
+            "medien": { title: "Medien", bgHex: "#f4b083", bgLightHex: "#ffedd5", fontColor: "#7c2d12", borderHex: "#fdba74" },
+            "verantwortung": { title: "Verantwortung", bgHex: "#ffe599", bgLightHex: "#fef9c3", fontColor: "#78350f", borderHex: "#fde047" },
+            "lesekonzept": { title: "Lesekompetenz stärken", bgHex: "#a8d08d", bgLightHex: "#dcfce7", fontColor: "#065f46", borderHex: "#86efac" }
+        };
+
+        const kmkLabels = {
+            "basis": "Basis", "suchen": "Suchen und Verarbeiten", "kommunizieren": "Kommunizieren und Kooperieren", "produzieren": "Produzieren und Präsentieren", "analysieren": "Analysieren und Reflektieren"
+        };
+
+        let poolSuggestions = JSON.parse(localStorage.getItem('rsb_pool_suggestions')) || [...window.originalPoolSuggestions];
+        const deptOptions = ["Allg.", "Bio", "BwR", "Ch", "D", "E", "EG", "F", "G", "Geo", "IT", "Ku", "LeKo", "M", "Mu", "Ph", "Projekt", "PuG", "Reli/Ethik", "WR"];
+
+        let curriculumData = JSON.parse(localStorage.getItem('rsb_curriculum_structure')) || JSON.parse(JSON.stringify(window.defaultCurriculumData));
+        let collectedLogs = [];
+        let leseLogs = JSON.parse(localStorage.getItem('rsb_lese_database')) || [];
+
+        // DOM Elemente
+        const classSelect = document.getElementById('class-select');
+        const leseClassSelect = document.getElementById('lese-class-select');
+        const teacherSelect = document.getElementById('teacher-select');
+        const globalSubjectFilter = document.getElementById('global-subject-filter');
+        const tablePlaceholder = document.getElementById('table-placeholder');
+        const lesePlaceholder = document.getElementById('lese-placeholder');
+        const tableContainer = document.getElementById('table-responsive-container');
+        const leseListContainer = document.getElementById('lese-list-container');
+        const curriculumTableBody = document.getElementById('curriculum-table-body');
+        const logTableBody = document.getElementById('log-table-body');
+        const counterDisplay = document.getElementById('counter-display');
+        const classProgressBadge = document.getElementById('class-progress-badge');
+        const curriculumProgressWrapper = document.getElementById('curriculum-progress-wrapper');
+        const topProgressBarFill = document.getElementById('top-progress-bar-fill');
+        const protocolCard = document.getElementById('protocol-card');
+        const protocolClassTitle = document.getElementById('protocol-class-title');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const progressBarText = document.getElementById('progress-bar-text');
+        const btnPrintCurriculum = document.getElementById('btn-print-curriculum');
+        const printLayout = document.getElementById('print-layout');
+        const btnLoadMoreSuggestions = document.getElementById('btn-load-more-suggestions');
+        const suggestionsLoadMoreWrapper = document.getElementById('suggestions-load-more-wrapper');
+        const loadMoreText = document.getElementById('load-more-text');
+
+        // Modals
+        const deleteModalOverlay = document.getElementById('delete-modal-overlay');
+        const deleteModalModuleName = document.getElementById('delete-modal-module-name');
+        const btnDeleteModalCancel = document.getElementById('btn-delete-modal-cancel');
+        const btnDeleteModalConfirm = document.getElementById('btn-delete-modal-confirm');
+        const leseAlertModal = document.getElementById('lese-alert-modal');
+        const btnLeseAlertOk = document.getElementById('btn-lese-alert-ok');
+        const deleteModuleModalOverlay = document.getElementById('delete-module-modal-overlay');
+        const deleteModuleModalName = document.getElementById('delete-module-modal-name');
+        const btnDeleteModuleModalCancel = document.getElementById('btn-delete-module-modal-cancel');
+        const btnDeleteModuleModalConfirm = document.getElementById('btn-delete-module-modal-confirm');
+        const successModalOverlay = document.getElementById('success-modal-overlay');
+        const successModalModuleName = document.getElementById('success-modal-module-name');
+        const btnSuccessModalOk = document.getElementById('btn-success-modal-ok');
+        const editModuleModalOverlay = document.getElementById('edit-module-modal-overlay');
+        const editModuleForm = document.getElementById('edit-module-form');
+        const addModuleModalOverlay = document.getElementById('add-module-modal-overlay');
+        const addModuleForm = document.getElementById('add-module-form');
+
+        // Hamburgermenü DOM Elemente
+        const btnHamburgerMenu = document.getElementById('btn-hamburger-menu');
+        const iconHamburger = document.getElementById('icon-hamburger');
+        const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
+        const mobileActiveTabTitle = document.getElementById('mobile-active-tab-title');
+
+        // Views Config
+        const views = {
+            checkout: document.getElementById('tab-content-checkout'),
+            lesekisten: document.getElementById('tab-content-lesekisten'),
+            knowledge: document.getElementById('tab-content-knowledge'),
+            admin: document.getElementById('tab-content-admin')
+        };
+        const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
+        const fullscreenText = document.getElementById('fullscreen-text');
+        const adminBoardCard = document.getElementById('admin-board-card');
+        const scrollNavigationAside = document.getElementById('scroll-navigation-aside');
+        const btnToTheTop = document.getElementById('btn-to-the-top');
+
+        function generateUUID() {
+            if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+            return 'uuid-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
+        }
+
+        function stripEmojis(text) {
+            if (!text) return '';
+            return text.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+        }
+
+        function saveCurriculumStructure() {
+            localStorage.setItem('rsb_curriculum_structure', JSON.stringify(curriculumData));
+            localStorage.setItem('rsb_pool_suggestions', JSON.stringify(poolSuggestions));
+        }
+
+        function initApp() {
+            let tOpts = `<option value="" disabled selected>Bitte Kürzel wählen</option>`;
+            teacherList.forEach(t => tOpts += `<option value="${t}">${t}</option>`);
+            teacherSelect.innerHTML = tOpts;
+
+            populateDeptDropdowns();
+            registerTabEvents();
+            registerClassSyncEvents();
+            registerHamburgerEvents();
+            loadStateFromServer();
+            lucide.createIcons();
+        }
+
+        // RICHTUNGSBASIERTE PARTIKEL-PHYSIK (EXPLOSION)
+        function triggerConfettiBurst(originX, originY) {
+            const colors = ['#f28d22', '#e07b12', '#38bdf8', '#10b981', '#fbbf24', '#ec4899', '#a8d08d'];
+            const particleCount = 100;
+            
+            const startX = originX || window.innerWidth / 2;
+            const startY = originY || window.innerHeight / 2;
+
+            for (let i = 0; i < particleCount; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-particle';
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                const size = (Math.random() * 8 + 6) + 'px';
+                p.style.width = size;
+                p.style.height = size;
+                if (Math.random() > 0.5) p.style.borderRadius = '50%';
+
+                document.body.appendChild(p);
+
+                const angle = Math.random() * Math.PI * 0.6 - Math.PI * 0.8;
+                const speed = Math.random() * 16 + 8;
+                
+                let velocityX = Math.cos(angle) * speed;
+                let velocityY = Math.sin(angle) * speed;
+                
+                let posX = startX;
+                let posY = startY;
+                let rotation = Math.random() * 360;
+                const rotationSpeed = Math.random() * 24 - 12;
+                
+                const gravity = 0.4; 
+                const friction = 0.96; 
+                let opacity = 1;
+
+                function updatePhysicsFrame() {
+                    velocityX *= friction;
+                    velocityY *= friction;
+                    velocityY += gravity; 
+                    
+                    posX += velocityX;
+                    posY += velocityY;
+                    rotation += rotationSpeed;
+                    
+                    p.style.transform = `translate3d(${posX}px, ${posY}px, 0) rotate(${rotation}deg)`;
+                    
+                    if (velocityY > 1) {
+                        opacity -= 0.015;
+                        p.style.opacity = opacity;
+                    }
+
+                    if (opacity > 0 && posY < window.innerHeight + 20) {
+                        requestAnimationFrame(updatePhysicsFrame);
+                    } else {
+                        p.remove();
+                    }
+                }
+                requestAnimationFrame(updatePhysicsFrame);
+            }
+        }
+
+        // NAVIGATION CONTROLLER
+        function executeTabSwitch(targetKey) {
+            currentActiveTab = targetKey;
+            mobileMenuDropdown.classList.add('hidden');
+            iconHamburger.setAttribute('data-lucide', 'menu');
+            
+            document.querySelectorAll('.tab-trigger').forEach(btn => {
+                const isTarget = btn.getAttribute('data-target') === targetKey;
+                btn.className = isTarget 
+                    ? "tab-trigger py-3 text-sm font-bold border-b-2 border-brand-orange text-slate-900 flex items-center gap-2 transition-all cursor-pointer shrink-0"
+                    : "tab-trigger py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-all cursor-pointer shrink-0";
+            });
+
+            document.querySelectorAll('.mobile-tab-trigger').forEach(btn => {
+                const isTarget = btn.getAttribute('data-target') === targetKey;
+                if(isTarget) {
+                    btn.className = "mobile-tab-trigger w-full p-2.5 rounded-lg text-left text-xs font-bold bg-brand-orange text-white flex items-center gap-2";
+                    mobileActiveTabTitle.innerHTML = btn.innerHTML;
+                } else {
+                    btn.className = "mobile-tab-trigger w-full p-2.5 rounded-lg text-left text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-2";
+                }
+            });
+
+            Object.keys(views).forEach(key => {
+                if (key === targetKey) views[key].classList.remove('hidden');
+                else views[key].classList.add('hidden');
+            });
+
+            scrollNavigationAside.classList.add('hidden');
+            if (targetKey === 'knowledge') { renderKnowledgeBase(); handleScrollEffects(); }
+            if (targetKey === 'admin') { renderAdminBoard(); }
+            if (targetKey === 'lesekisten') { renderLeseKonzept(); }
+            if (targetKey === 'checkout' && classSelect.value) { renderCurriculumTable(); }
+            
+            lucide.createIcons();
+        }
+
+        function registerTabEvents() {
+            document.querySelectorAll('.tab-trigger, .mobile-tab-trigger').forEach(trigger => {
+                trigger.addEventListener('click', () => {
+                    executeTabSwitch(trigger.getAttribute('data-target'));
+                });
+            });
+        }
+
+        function registerHamburgerEvents() {
+            btnHamburgerMenu.addEventListener('click', () => {
+                const isClosed = mobileMenuDropdown.classList.contains('hidden');
+                if(isClosed) {
+                    mobileMenuDropdown.classList.remove('hidden');
+                    mobileMenuDropdown.classList.add('flex');
+                    iconHamburger.setAttribute('data-lucide', 'x');
+                } else {
+                    mobileMenuDropdown.classList.add('hidden');
+                    mobileMenuDropdown.classList.remove('flex');
+                    iconHamburger.setAttribute('data-lucide', 'menu');
+                }
+                lucide.createIcons();
+            });
+        }
+
+        function registerClassSyncEvents() {
+            const syncedSelects = [classSelect, leseClassSelect];
+            syncedSelects.forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const nextVal = e.target.value;
+                    syncedSelects.forEach(s => s.value = nextVal);
+                    renderCurriculumTable();
+                    updateLogTable();
+                    renderLeseKonzept();
+                });
+            });
+
+            document.querySelectorAll('.btn-prev-class').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    let idx = classesArray.indexOf(classSelect.value);
+                    const newVal = idx === -1 ? classesArray[0] : classesArray[(idx - 1 + classesArray.length) % classesArray.length];
+                    syncedSelects.forEach(s => { s.value = newVal; s.dispatchEvent(new Event('change')); });
+                });
+            });
+            document.querySelectorAll('.btn-next-class').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    let idx = classesArray.indexOf(classSelect.value);
+                    const newVal = idx === -1 ? classesArray[0] : classesArray[(idx + 1) % classesArray.length];
+                    syncedSelects.forEach(s => { s.value = newVal; s.dispatchEvent(new Event('change')); });
+                });
+            });
+
+            document.getElementById('btn-lese-prev-class').addEventListener('click', () => {
+                let idx = classesArray.indexOf(leseClassSelect.value);
+                const newVal = idx === -1 ? classesArray[0] : classesArray[(idx - 1 + classesArray.length) % classesArray.length];
+                syncedSelects.forEach(s => { s.value = newVal; s.dispatchEvent(new Event('change')); });
+            });
+            document.getElementById('btn-lese-next-class').addEventListener('click', () => {
+                let idx = classesArray.indexOf(leseClassSelect.value);
+                const newVal = idx === -1 ? classesArray[0] : classesArray[(idx + 1) % classesArray.length];
+                syncedSelects.forEach(s => { s.value = newVal; s.dispatchEvent(new Event('change')); });
+            });
+        }
+
+        function openModal(modalEl) {
+            modalEl.classList.remove('pointer-events-none', 'opacity-0');
+            modalEl.firstElementChild.classList.remove('scale-95');
+            modalEl.firstElementChild.classList.add('scale-100');
+        }
+
+        function closeModal(modalEl) {
+            modalEl.classList.add('pointer-events-none', 'opacity-0');
+            modalEl.firstElementChild.classList.remove('scale-100');
+            modalEl.firstElementChild.classList.add('scale-95');
+        }
+
+        function openDeleteModal(id, moduleName) {
+            deleteModalModuleName.textContent = moduleName;
+            openModal(deleteModalOverlay);
+            btnDeleteModalConfirm.focus();
+        }
+
+        function closeDeleteModal() {
+            closeModal(deleteModalOverlay);
+            pendingDeleteId = null;
+            isLeseLogDeletion = false;
+        }
+
+        btnDeleteModalCancel.addEventListener('click', closeDeleteModal);
+        btnDeleteModalConfirm.addEventListener('click', () => {
+            if (pendingDeleteId) {
+                if (isLeseLogDeletion) {
+                    leseLogs = leseLogs.filter(log => log.id !== pendingDeleteId);
+                    localStorage.setItem('rsb_lese_database', JSON.stringify(leseLogs));
+                    renderLeseKonzept();
+                } else {
+                    executeDeleteLogEntry(pendingDeleteId);
+                }
+            }
+            closeDeleteModal();
+        });
+
+        btnLeseAlertOk.addEventListener('click', () => closeModal(leseAlertModal));
+
+        function getGradientColor(percent) {
+            const r1 = 239, g1 = 68, b1 = 68;    
+            const r2 = 56, g2 = 189, b2 = 248;   
+            const r = Math.round(r1 + (r2 - r1) * (percent / 100));
+            const g = Math.round(g1 + (g2 - g1) * (percent / 100));
+            const b = Math.round(b1 + (b2 - b1) * (percent / 100));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function updateSliderBackground(slider, maxSeiten) {
+            const val = parseInt(slider.value);
+            const percent = maxSeiten > 0 ? (val / maxSeiten) * 100 : 0;
+            const dynamicColor = getGradientColor(percent);
+            slider.style.background = `linear-gradient(to right, #ef4444 0%, ${dynamicColor} ${percent}%, #e2e8f0 ${percent}%, #e2e8f0 100%)`;
+            const displayId = slider.id.replace('slider-', 'display-');
+            const displayEl = document.getElementById(displayId);
+            if (displayEl) displayEl.textContent = val;
+        }
+
+        function renderLeseKonzept() {
+            const selectedClass = leseClassSelect.value;
+            if (!selectedClass) {
+                lesePlaceholder.classList.remove('hidden');
+                leseListContainer.classList.add('hidden');
+                return;
+            }
+
+            const grade = parseInt(selectedClass);
+            lesePlaceholder.classList.add('hidden');
+            leseListContainer.classList.remove('hidden');
+            leseListContainer.innerHTML = '';
+
+            const buecher = (window.lesekistenPool && window.lesekistenPool[grade]) ? window.lesekistenPool[grade] : [];
+            const classLogs = leseLogs.filter(log => log.klasse === selectedClass);
+
+            if (buecher.length === 0) {
+                leseListContainer.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">Für Jahrgang ${grade} sind im rollierenden Lesekonzept aktuell keine Buchtitel hinterlegt.</div>`;
+                return;
+            }
+
+            buecher.forEach(buch => {
+                const buchLogs = classLogs.filter(log => log.buchId === buch.id);
+                buchLogs.sort((a, b) => b.rawTimestamp - a.rawTimestamp);
+                
+                let aktuellerSeitenStand = 0;
+                if (buchLogs.length > 0) { aktuellerSeitenStand = buchLogs[0].seite; }
+
+                const card = document.createElement('div');
+                card.className = "p-5 border border-slate-200 bg-white rounded-xl shadow-xs hover:border-slate-300 transition-all flex flex-col gap-4";
+                
+                let tOptionsHtml = `<option value="" disabled selected>Kürzel</option>`;
+                teacherList.forEach(t => tOptionsHtml += `<option value="${t}">${t}</option>`);
+
+                let linkHtml = '';
+                if (buch.linkMaterial) {
+                    linkHtml = `<a href="${buch.linkMaterial}" target="_blank" class="text-[11px] font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded transition-colors flex items-center gap-0.5"><i data-lucide="link" class="w-3 h-3"></i> Material</a>`;
+                }
+
+                let verlaufHtml = '';
+                if (buchLogs.length > 0) {
+                    verlaufHtml = `<div class="mt-2 pt-3 border-t border-slate-100 space-y-1.5">`;
+                    buchLogs.forEach(log => {
+                        const prozent = Math.round((log.seite / log.seitenMax) * 100);
+                        verlaufHtml += `
+                            <div class="flex items-center justify-between text-xs bg-slate-50/60 border border-slate-100 rounded-lg px-3 py-1.5 text-slate-600 font-medium">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-slate-700 font-semibold flex items-center gap-1">
+                                        <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i> Bis S. ${log.seite}
+                                    </span>
+                                    <span class="text-slate-400 text-[11px]">(von ${log.lehrer})</span>
+                                    <span class="text-[10px] font-bold text-white bg-[#606C85] px-1.5 py-0.2 rounded-xs font-mono">${prozent}%</span>
+                                </div>
+                                <div class="flex items-center gap-3 font-mono text-[11px] text-slate-400">
+                                    <span>${log.datum.split(' ')[0]}</span>
+                                    <button class="text-slate-300 hover:text-red-500 transition-colors cursor-pointer trigger-leselog-del" data-id="${log.id}" data-title="${buch.titel} (S. ${log.seite})">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                    verlaufHtml += `</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                                <i data-lucide="book" class="w-4 h-4 text-slate-400"></i> ${buch.titel}
+                            </h4>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">${buch.autor} &bull; ${buch.genre} &bull; Gesamt: ${buch.seitenMax} Seiten</p>
+                        </div>
+                        ${linkHtml}
+                    </div>
+
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                        <div class="md:col-span-6 flex items-center gap-3">
+                            <span class="text-xs font-semibold text-slate-400 w-12 text-center shrink-0 bg-slate-200 px-1.5 py-0.5 rounded font-mono">Start</span>
+                            <input type="range" id="slider-${buch.id}" min="0" max="${buch.seitenMax}" value="${aktuellerSeitenStand}" 
+                                class="progress-slider"
+                                oninput="updateSliderBackground(this, ${buch.seitenMax})">
+                            <div class="text-xs font-bold text-brand-orange bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-md font-mono shrink-0 w-16 text-center">
+                                S. <span id="display-${buch.id}">${aktuellerSeitenStand}</span>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-6 flex items-center gap-2">
+                            <select id="teacher-${buch.id}" class="text-xs p-2.5 border border-slate-300 rounded-xl bg-white font-semibold text-slate-800 focus:outline-none focus:border-orange-500 w-24 shrink-0 shadow-3xs">
+                                ${tOptionsHtml}
+                            </select>
+                            <button onclick="quittiereLeseFortschritt(event, '${buch.id}', '${buch.titel}', ${buch.seitenMax})" 
+                                class="flex-grow py-2 bg-brand-orange hover:bg-brand-orange-hover text-white font-bold text-xs rounded-xl shadow-2xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                <i data-lucide="bookmark-check" class="w-3.5 h-3.5"></i> Stand eintragen
+                            </button>
+                        </div>
+                    </div>
+                    ${verlaufHtml}
+                `;
+                
+                card.querySelectorAll('.trigger-leselog-del').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        pendingDeleteId = btn.getAttribute('data-id');
+                        isLeseLogDeletion = true;
+                        openDeleteModal(pendingDeleteId, btn.getAttribute('data-title'));
+                    });
+                });
+
+                leseListContainer.appendChild(card);
+                updateSliderBackground(document.getElementById(`slider-${buch.id}`), buch.seitenMax);
+            });
+            lucide.createIcons();
+        }
+
+        function quittiereLeseFortschritt(event, buchId, buchTitel, seitenMax) {
+            const lehrerSelect = document.getElementById(`teacher-${buchId}`);
+            const slider = document.getElementById(`slider-${buchId}`);
+            const lehrer = lehrerSelect.value;
+            const klasse = leseClassSelect.value;
+            const seite = parseInt(slider.value);
+
+            if (!lehrer) {
+                openModal(leseAlertModal);
+                lehrerSelect.focus();
+                return;
+            }
+
+            const now = new Date();
+            const timestampStr = now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
+
+            const newLog = {
+                id: 'leselog-' + Math.random().toString(36).substr(2, 9),
+                klasse: klasse,
+                lehrer: lehrer,
+                buchId: buchId,
+                titel: buchTitel,
+                seite: seite,
+                seitenMax: seitenMax,
+                datum: timestampStr,
+                rawTimestamp: Date.now()
+            };
+
+            leseLogs.push(newLog);
+            localStorage.setItem('rsb_lese_database', JSON.stringify(leseLogs));
+            
+            if (seite === seitenMax) {
+                triggerConfettiBurst(event.clientX, event.clientY);
+            }
+
+            renderLeseKonzept();
+        }
+
+        function populateDeptDropdowns() {
+            const newModDeptSelect = document.getElementById('new-mod-dept');
+            const editModDeptSelect = document.getElementById('edit-mod-dept');
+            [newModDeptSelect, editModDeptSelect].forEach(select => {
+                if (select) {
+                    select.innerHTML = '';
+                    deptOptions.forEach(dept => {
+                        const opt = document.createElement('option');
+                        opt.value = dept;
+                        opt.textContent = dept === "Allg." ? "Allg. (Fächerübergreifend)" : dept;
+                        select.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        function openAddModuleModalDirect(grade) {
+            document.getElementById('new-mod-grade').value = grade;
+            openModal(addModuleModalOverlay);
+        }
+
+        function closeAddModuleModalDirect() {
+            closeModal(addModuleModalOverlay);
+            addModuleForm.reset();
+        }
+
+        function openDeleteModuleModal(id, name) {
+            pendingDeleteModuleId = id;
+            deleteModuleModalName.textContent = name;
+            openModal(deleteModuleModalOverlay);
+            btnDeleteModuleModalConfirm.focus();
+        }
+
+        function closeDeleteModuleModal() {
+            closeModal(deleteModuleModalOverlay);
+            pendingDeleteModuleId = null;
+        }
+
+        btnDeleteModuleModalCancel.addEventListener('click', closeDeleteModuleModal);
+        btnDeleteModuleModalConfirm.addEventListener('click', () => {
+            if (pendingDeleteModuleId) { executeDeleteModule(pendingDeleteModuleId); }
+            closeDeleteModuleModal();
+        });
+
+        function openEditModuleModal(mod, originalGrade) {
+            document.getElementById('edit-mod-id').value = mod.id;
+            document.getElementById('edit-mod-name').value = mod.name;
+            document.getElementById('edit-mod-dept').value = mod.dept;
+            document.getElementById('edit-mod-area').value = mod.area;
+            document.getElementById('edit-mod-kmk').value = mod.kmk || "basis";
+            document.getElementById('edit-mod-grade').value = originalGrade;
+            document.getElementById('edit-mod-notes').value = mod.notes || '';
+            document.getElementById('edit-mod-linkdrive').value = mod.linkDrive || '';
+            document.getElementById('edit-mod-linkmebis').value = mod.linkMebis || '';
+            openModal(editModuleModalOverlay);
+        }
+
+        function closeEditModuleModal() {
+            closeModal(editModuleModalOverlay);
+            editModuleForm.reset();
+        }
+
+        document.getElementById('btn-edit-modal-close').addEventListener('click', closeEditModuleModal);
+        document.getElementById('btn-edit-modal-cancel').addEventListener('click', closeEditModuleModal);
+
+        editModuleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-mod-id').value;
+            const targetGrade = parseInt(document.getElementById('edit-mod-grade').value);
+
+            let updatedMod = null;
+            for (const grade in curriculumData) {
+                const idx = curriculumData[grade].findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    updatedMod = curriculumData[grade].splice(idx, 1)[0];
+                    break;
+                }
+            }
+
+            if (updatedMod) {
+                updatedMod.name = document.getElementById('edit-mod-name').value.trim();
+                updatedMod.dept = document.getElementById('edit-mod-dept').value;
+                updatedMod.area = document.getElementById('edit-mod-area').value;
+                updatedMod.kmk = document.getElementById('edit-mod-kmk').value;
+                updatedMod.notes = document.getElementById('edit-mod-notes').value.trim();
+                updatedMod.linkDrive = document.getElementById('edit-mod-linkdrive').value.trim() || null;
+                updatedMod.linkMebis = document.getElementById('edit-mod-linkmebis').value.trim() || null;
+
+                if (!curriculumData[targetGrade]) { curriculumData[targetGrade] = []; }
+                curriculumData[targetGrade].push(updatedMod);
+
+                saveCurriculumStructure();
+                closeEditModuleModal();
+                renderAdminBoard();
+            }
+        });
+
+        function handleIndicatorClick(grade) {
+            if (currentActiveTab === 'knowledge') {
+                const element = document.getElementById(`grade-section-${grade}`);
+                if (element && !element.classList.contains('hidden')) {
+                    const offset = 180;
+                    window.scrollTo({ top: (element.getBoundingClientRect().top - document.body.getBoundingClientRect().top) - offset, behavior: 'smooth' });
+                }
+            }
+        }
+
+        function handleScrollEffects() {
+            const scrollY = window.scrollY;
+            if (scrollY > 300) btnToTheTop.classList.remove('opacity-0', 'pointer-events-none');
+            else btnToTheTop.classList.add('opacity-0', 'pointer-events-none');
+
+            if (currentActiveTab === 'knowledge') {
+                if (scrollY > 300) scrollNavigationAside.classList.remove('hidden');
+                else scrollNavigationAside.classList.add('hidden');
+
+                let currentActiveGrade = null;
+                [5,6,7,8,9,10].forEach(grade => {
+                    const element = document.getElementById(`grade-section-${grade}`);
+                    if (element && !element.classList.contains('hidden')) {
+                        if (element.getBoundingClientRect().top - 180 <= 0) { currentActiveGrade = grade; }
+                    }
+                });
+
+                document.querySelectorAll('.scroll-dot').forEach(dot => {
+                    if (parseInt(dot.getAttribute('data-grade')) === currentActiveGrade) dot.classList.add('active');
+                    else dot.classList.remove('active');
+                });
+            } else {
+                scrollNavigationAside.classList.add('hidden');
+            }
+        }
+        window.addEventListener('scroll', handleScrollEffects);
+
+        async function loadStateFromServer() {
+            try {
+                const response = await fetch(BACKEND_URL);
+                if (response.ok) {
+                    collectedLogs = await response.json();
+                    localStorage.setItem('rsb_curriculum_database', JSON.stringify(collectedLogs));
+                }
+            } catch (error) {
+                collectedLogs = JSON.parse(localStorage.getItem('rsb_curriculum_database')) || [];
+            }
+            if(classSelect.value) { renderCurriculumTable(); updateLogTable(); }
+        }
+
+        async function saveStateToServer() {
+            localStorage.setItem('rsb_curriculum_database', JSON.stringify(collectedLogs));
+            updateLogTable();
+            try {
+                await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(collectedLogs),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } catch (error) {}
+        }
+
+        function renderCurriculumTable() {
+            const selectedClass = classSelect.value;
+            if (!selectedClass) return;
+            const grade = parseInt(selectedClass); 
+            tablePlaceholder.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            curriculumTableBody.innerHTML = '';
+
+            const selectedSubject = globalSubjectFilter.value;
+            let modulesToRender = curriculumData[grade] || [];
+            if (selectedSubject !== "ALL") { modulesToRender = modulesToRender.filter(m => m.dept === selectedSubject); }
+
+            if (modulesToRender.length === 0) {
+                curriculumTableBody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400 italic">Keine Module für diese Fachschaft in der Klassenstufe vorhanden.</td></tr>`;
+                return;
+            }
+
+            modulesToRender.forEach((mod) => {
+                const fullModuleName = `${mod.name} (${mod.dept})`;
+                const existingLog = collectedLogs.find(log => log.klasse === selectedClass && log.thema === fullModuleName);
+                const isChecked = !!existingLog;
+                const tr = document.createElement('tr');
+                const kmkText = kmkLabels[mod.kmk || "basis"];
+
+                if (isChecked) {
+                    tr.className = "bg-slate-100/90 border-l-4 border-l-[#606C85] text-slate-900 transition-all";
+                    tr.innerHTML = `
+                        <td class="p-3 align-middle flex flex-col gap-1">
+                            <span class="inline-block text-center w-36 text-xs font-bold px-2 py-0.5 rounded-full font-mono bg-brand-orange text-white">${mod.dept}</span>
+                            <span class="inline-block text-center w-36 text-[10px] font-medium px-1 py-0.5 rounded-md bg-slate-200 text-slate-600 truncate" title="${kmkText}">${kmkText}</span>
+                        </td>
+                        <td class="p-3 align-middle font-semibold text-slate-700">${mod.name}<div class="text-[11px] text-[#606C85] font-semibold mt-0.5 flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> Erledigt durch ${existingLog.lehrer} am ${existingLog.datum}</div></td>
+                        <td class="p-3 align-middle text-right"><button class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg bg-white shadow-2xs border border-slate-200 transition-colors inline-flex items-center justify-center cursor-pointer remove-btn"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                    `;
+                    tr.querySelector('.remove-btn').addEventListener('click', (e) => { e.stopPropagation(); pendingDeleteId = existingLog.id; isLeseLogDeletion = false; openDeleteModal(existingLog.id, existingLog.thema); });
+                } else {
+                    const currentCfg = areaConfig[mod.area] || { bgHex: "#ffffff", bgLightHex: "#ffffff", fontColor: "#334155", borderHex: "#cbd5e1" };
+                    tr.className = "hover:opacity-100 transition-all border-l-4 group";
+                    tr.style.backgroundColor = currentCfg.bgLightHex;
+                    tr.style.borderColor = currentCfg.borderHex;
+                    tr.innerHTML = `
+                        <td class="p-3 align-middle">
+                            <div class="flex flex-col gap-1">
+                                <span class="inline-block text-center w-36 text-xs font-bold px-2 py-0.5 rounded-full font-mono bg-brand-orange text-white">${mod.dept}</span>
+                                <span class="inline-block text-center w-36 text-[10px] font-medium px-1 py-0.5 rounded-md bg-white/80 border border-slate-300 text-slate-700 font-sans shadow-3xs truncate" title="${kmkText}">${kmkText}</span>
+                            </div>
+                        </td>
+                        <td class="p-3 align-middle font-medium text-slate-700 group-hover:text-slate-900 cursor-pointer text-row-click">${mod.name}</td>
+                        <td class="p-3 align-middle text-right"><div class="w-4 h-4 rounded-full border-2 border-slate-400 ml-auto bg-white group-hover:border-brand-orange cursor-pointer text-row-click"></div></td>
+                    `;
+                    tr.querySelectorAll('.text-row-click').forEach(el => {
+                        el.addEventListener('click', () => { toggleModuleSelection(mod.name, mod.dept, selectedClass); });
+                    });
+                }
+                curriculumTableBody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function renderKnowledgeBase() {
+            const container = document.getElementById('knowledge-base-container');
+            container.innerHTML = '';
+            const selectedSubject = globalSubjectFilter.value;
+
+            Object.keys(curriculumData).forEach(grade => {
+                let modulesForGrade = curriculumData[grade] || [];
+                if (selectedSubject !== "ALL") { modulesForGrade = modulesForGrade.filter(m => m.dept === selectedSubject); }
+
+                const gradeCard = document.createElement('div');
+                gradeCard.id = `grade-section-${grade}`;
+                if (modulesForGrade.length === 0) {
+                    gradeCard.className = "hidden";
+                    if (document.getElementById(`dot-nav-${grade}`)) document.getElementById(`dot-nav-${grade}`).classList.add('opacity-20', 'pointer-events-none');
+                    container.appendChild(gradeCard);
+                    return;
+                } else {
+                    gradeCard.className = "border border-slate-200 rounded-xl overflow-hidden shadow-xs bg-slate-50/50 block";
+                    if (document.getElementById(`dot-nav-${grade}`)) document.getElementById(`dot-nav-${grade}`).classList.remove('opacity-20', 'pointer-events-none');
+                }
+                
+                let html = `<div class="bg-[#606C85] text-white p-3 font-bold text-sm flex justify-between items-center"><span>Jahrgangsstufe ${grade}</span><span class="text-xs font-normal opacity-80">${modulesForGrade.length} Bausteine</span></div><div class="divide-y divide-slate-200 bg-white">`;
+
+                modulesForGrade.forEach(mod => {
+                    let dependencyHtml = '';
+                    if (mod.buildOn) {
+                        const targetMod = findModuleById(mod.buildOn);
+                        if(targetMod) dependencyHtml = `<button onclick="highlightMasterModule('${mod.buildOn}')" class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 px-2 py-0.5 rounded transition-all cursor-pointer"><i data-lucide="git-merge" class="w-3 h-3"></i> Baut auf: ${targetMod.name}</button>`;
+                    }
+                    let logoPrefix = mod.name.toLowerCase().includes('medienführerschein') ? `<img src="img/mfb_logo.png" alt="logo" class="w-4 h-4 object-contain inline shrink-0 mr-1.5">` : '';
+                    let buttonsHtml = '';
+                    if (mod.linkDrive) buttonsHtml += `<a href="${mod.linkDrive}" target="_blank" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg flex items-center gap-1 border border-slate-300 shadow-3xs transition-colors"><i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-500"></i> Link</a>`;
+                    if (mod.linkMebis) buttonsHtml += `<a href="${mod.linkMebis}" target="_blank" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg flex items-center gap-1 border border-slate-300 shadow-3xs transition-colors"><i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-500"></i> Link</a>`;
+                    if (!buttonsHtml) buttonsHtml = `<span class="px-3 py-1 bg-slate-50 text-slate-400 text-xs rounded-lg border border-slate-200/50 cursor-not-allowed flex items-center gap-1"><i data-lucide="link-2" class="w-3.5 h-3.5"></i> Kein Link</span>`;
+
+                    const currentArea = areaConfig[mod.area] || { title: "Allgemein", bgHex: "#f1f5f9", bgLightHex: "#f8fafc", fontColor: "#334155" };
+                    const kmkText = kmkLabels[mod.kmk || "basis"];
+
+                    html += `
+                        <div class="p-4 flex flex-col gap-3 transition-all border-l-4" id="know-mod-${mod.id}" style="border-left-color: ${currentArea.bgHex};">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div class="space-y-1 max-w-xl">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="px-2 py-0.5 text-[10px] font-mono font-bold text-white bg-brand-orange rounded-md">${mod.dept}</span>
+                                        <span class="px-2 py-0.5 text-[10px] font-sans font-semibold text-slate-700 bg-slate-100 border border-slate-300 rounded-md">${kmkText}</span>
+                                        <span class="px-2 py-0.5 text-[10px] font-sans font-bold rounded-md" style="background-color: ${currentArea.fontColor}; color: ${currentArea.fontColor};">${currentArea.title}</span>
+                                        <h4 class="font-bold text-sm text-slate-800 flex items-center">${logoPrefix}${mod.name}</h4>
+                                    </div>
+                                    <p class="text-xs text-slate-500 font-medium">${mod.notes}</p>${dependencyHtml}
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0 md:justify-end">${buttonsHtml}</div>
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+                gradeCard.innerHTML = html;
+                container.appendChild(gradeCard);
+            });
+            lucide.createIcons();
+        }
+
+        function findModuleById(id) {
+            for (const grade in curriculumData) {
+                const found = curriculumData[grade].find(m => m.id === id);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function highlightMasterModule(masterId) {
+            const element = document.getElementById('know-mod-' + masterId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.classList.add('dependency-highlight');
+                setTimeout(() => { element.classList.remove('dependency-highlight'); }, 4000);
+            }
+        }
+
+        function renderAdminBoard() {
+            const grades = [5, 6, 7, 8, 9, 10];
+            const selectedSubject = globalSubjectFilter.value;
+            
+            grades.forEach(grade => {
+                const col = document.querySelector(`.admin-drag-col[data-grade="${grade}"]`);
+                if (!col) return;
+                const container = col.querySelector('.drag-items-container');
+                container.innerHTML = '';
+                
+                const modules = curriculumData[grade] || [];
+                col.querySelector('.count-badge').textContent = modules.filter(mod => selectedSubject === "ALL" || mod.dept === selectedSubject).length;
+                
+                modules.forEach(mod => {
+                    const isMatch = (selectedSubject === "ALL" || mod.dept === selectedSubject);
+                    const currentCfg = areaConfig[mod.area] || { borderHex: "#cbd5e1" };
+                    const div = document.createElement('div');
+                    div.className = "admin-drag-item p-3 rounded-lg border shadow-xs hover:shadow-md transition-all select-none cursor-pointer bg-white" + (isMatch ? "" : " hidden");
+                    div.style.borderColor = currentCfg.borderHex;
+                    div.setAttribute('data-id', mod.id); div.setAttribute('data-grade', grade);
+                    
+                    const kmkText = kmkLabels[mod.kmk || "basis"];
+                    div.innerHTML = `
+                        <div class="flex flex-col gap-1.5 relative group/card">
+                            <div class="drag-handle absolute -left-1 -top-1 px-1.5 py-0.5 rounded bg-slate-200/90 opacity-0 group-hover/card:opacity-100 transition-opacity cursor-grab text-slate-600"><i data-lucide="grip-vertical" class="w-3 h-3"></i></div>
+                            <div class="flex items-center justify-between gap-1 pl-4">
+                                <div class="flex items-center gap-1 max-w-[85%] overflow-hidden">
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md font-mono bg-brand-orange text-white shrink-0">${mod.dept}</span>
+                                    <span class="text-[9px] font-semibold px-1 py-0.5 rounded-md bg-slate-100 border border-slate-300 text-slate-600 truncate" title="${kmkText}">${kmkText}</span>
+                                </div>
+                                <button class="text-slate-400 hover:text-red-500 p-1 transition-colors rounded-md delete-mod-btn" data-id="${mod.id}"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                            <h4 class="text-xs font-bold text-slate-800 leading-tight">${mod.name}</h4>
+                            <p class="text-[10px] text-slate-600 line-clamp-2 leading-normal font-medium">${mod.notes || 'Keine schulinternen Hinweise.'}</p>
+                        </div>`;
+                    
+                    div.addEventListener('click', () => { openEditModuleModal(mod, grade); });
+                    div.querySelector('.delete-mod-btn').addEventListener('click', (e) => { e.stopPropagation(); openDeleteModuleModal(mod.id, mod.name); });
+                    container.appendChild(div);
+                });
+
+                const addTriggerCard = document.createElement('div');
+                addTriggerCard.className = "w-full p-2.5 bg-white hover:bg-orange-50 border border-dashed border-slate-300 hover:border-brand-orange text-slate-400 hover:text-brand-orange text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 select-none shrink-0";
+                addTriggerCard.innerHTML = `<i data-lucide="plus" class="w-4 h-4"></i> Baustein hinzufügen`;
+                addTriggerCard.addEventListener('click', (e) => { e.stopPropagation(); openAddModuleModalDirect(grade); });
+                container.appendChild(addTriggerCard);
+            });
+
+            const suggestionsContainer = document.getElementById('suggestions-box-container');
+            suggestionsContainer.innerHTML = '';
+            
+            if (poolSuggestions.length === 0) {
+                suggestionsContainer.innerHTML = `<div class="col-span-full p-4 text-center text-xs text-slate-400 italic">Alle Vorschläge wurden bereits integriert.</div>`;
+                suggestionsLoadMoreWrapper.classList.add('hidden');
+            } else {
+                poolSuggestions.slice(0, maxVisibleSuggestions).forEach(sug => {
+                    const div = document.createElement('div');
+                    div.className = "admin-drag-item p-3 rounded-lg border shadow-2xs hover:shadow-md transition-all select-none cursor-grab bg-white flex flex-col gap-1.5 border-dashed relative group/card";
+                    div.style.borderColor = "#f28d22"; div.setAttribute('data-id', sug.id); div.setAttribute('data-is-suggestion', "true");
+                    
+                    const kmkText = kmkLabels[sug.kmk || "basis"];
+                    div.innerHTML = `
+                        <div class="drag-handle absolute -left-1 -top-1 px-1.5 py-0.5 rounded bg-slate-200/90 opacity-0 group-hover/card:opacity-100 transition-opacity cursor-grab text-slate-600"><i data-lucide="grip-vertical" class="w-3 h-3"></i></div>
+                        <div class="flex items-center justify-between gap-1 w-full pl-4">
+                            <div class="flex items-center gap-1 overflow-hidden">
+                                <span class="text-[9px] font-bold px-1 py-0.5 rounded-sm font-mono bg-amber-500 text-white shrink-0">Vorschlag</span>
+                                <span class="text-[9px] font-bold px-1 py-0.5 rounded-sm font-mono bg-brand-orange text-white shrink-0">${sug.dept}</span>
+                            </div>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-800 leading-tight pl-4">${sug.name}</h4>`;
+                    suggestionsContainer.appendChild(div);
+                });
+                suggestionsLoadMoreWrapper.classList.toggle('hidden', poolSuggestions.length <= maxVisibleSuggestions);
+            }
+            initDragAndDrop();
+            lucide.createIcons();
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.admin-drag-item:not(.dragging):not(.hidden)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function rebuildCurriculumFromDOM() {
+            const moduleLookup = {};
+            Object.values(curriculumData).flat().forEach(mod => { if (mod && mod.id) moduleLookup[mod.id] = mod; });
+            poolSuggestions.forEach(sug => moduleLookup[sug.id] = sug);
+
+            const newCurriculumData = {};
+            let usedSuggestionIds = [];
+
+            [5,6,7,8,9,10].forEach(grade => {
+                newCurriculumData[grade] = [];
+                const col = document.querySelector(`.admin-drag-col[data-grade="${grade}"]`);
+                if (col) {
+                    col.querySelectorAll('.admin-drag-item').forEach(item => {
+                        const id = item.getAttribute('data-id');
+                        const originalMod = moduleLookup[id];
+                        if (originalMod) {
+                            if (id.startsWith('sug_')) {
+                                newCurriculumData[grade].push({ ...originalMod, id: generateUUID() });
+                                usedSuggestionIds.push(id);
+                            } else {
+                                newCurriculumData[grade].push(originalMod);
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (usedSuggestionIds.length > 0) poolSuggestions = poolSuggestions.filter(sug => !usedSuggestionIds.includes(sug.id));
+            curriculumData = newCurriculumData;
+            saveCurriculumStructure();
+        }
+
+        function initDragAndDrop() {
+            document.querySelectorAll('.admin-drag-item').forEach(item => {
+                if (item.getAttribute('data-is-suggestion') === "true") item.setAttribute('draggable', 'true');
+                else {
+                    const handle = item.querySelector('.drag-handle');
+                    if (handle) {
+                        handle.addEventListener('mouseenter', () => item.setAttribute('draggable', 'true'));
+                        handle.addEventListener('mouseleave', () => item.removeAttribute('draggable'));
+                    }
+                }
+                item.addEventListener('dragstart', (e) => { item.classList.add('dragging'); e.dataTransfer.setData('text/plain', item.getAttribute('data-id')); });
+                item.addEventListener('dragend', () => { item.classList.remove('dragging'); item.removeAttribute('draggable'); rebuildCurriculumFromDOM(); renderAdminBoard(); });
+            });
+
+            document.querySelectorAll('.admin-drag-col').forEach(col => {
+                col.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const container = col.querySelector('.drag-items-container');
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    const draggable = document.querySelector('.dragging');
+                    if (draggable) {
+                        if (afterElement == null) {
+                            const plusTrigger = col.querySelector('div:not(.admin-drag-item)');
+                            if (plusTrigger) col.insertBefore(draggable, plusTrigger);
+                            else container.appendChild(draggable);
+                        } else container.insertBefore(draggable, afterElement);
+                    }
+                });
+                col.addEventListener('dragenter', (e) => { e.preventDefault(); col.classList.add('drag-over'); });
+                col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+                col.addEventListener('drop', (e) => e.preventDefault());
+            });
+        }
+
+        addModuleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const grade = parseInt(document.getElementById('new-mod-grade').value);
+            const name = document.getElementById('new-mod-name').value.trim();
+            const newModule = {
+                id: generateUUID(), name: name,
+                dept: document.getElementById('new-mod-dept').value,
+                area: document.getElementById('new-mod-area').value,
+                kmk: document.getElementById('new-mod-kmk').value,
+                buildOn: null, notes: document.getElementById('new-mod-notes').value.trim(),
+                linkDrive: document.getElementById('new-mod-linkdrive').value.trim() || null,
+                linkMebis: document.getElementById('new-mod-linkmebis').value.trim() || null
+            };
+            if (!curriculumData[grade]) curriculumData[grade] = [];
+            curriculumData[grade].push(newModule);
+            saveCurriculumStructure(); closeAddModuleModalDirect(); renderAdminBoard(); openSuccessModal(name, grade);
+        });
+
+        function executeDeleteModule(id) {
+            for (const grade in curriculumData) {
+                const idx = curriculumData[grade].findIndex(m => m.id === id);
+                if (idx !== -1) { curriculumData[grade].splice(idx, 1); break; }
+            }
+            saveCurriculumStructure(); renderAdminBoard();
+        }
+
+        function toggleModuleSelection(moduleName, department, selectedClass) {
+            const teacher = teacherSelect.value;
+            if (!teacher) { alert("Bitte wählen Sie zuerst oben Ihr Lehrerkürzel aus!"); teacherSelect.focus(); return; }
+            const fullModuleName = `${moduleName} (${department})`;
+            const now = new Date();
+            const timestampStr = now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
+
+            collectedLogs.push({ id: generateUUID(), klasse: selectedClass, lehrer: teacher, thema: fullModuleName, datum: timestampStr });
+            saveStateToServer(); renderCurriculumTable();
+        }
+
+        function executeDeleteLogEntry(id) {
+            collectedLogs = collectedLogs.filter(log => log.id !== id);
+            saveStateToServer(); renderCurriculumTable();
+        }
+
+        function updateLogTable() {
+            const selectedClass = classSelect.value;
+            if (!selectedClass) { protocolCard.classList.add('hidden'); curriculumProgressWrapper.classList.add('hidden'); return; }
+
+            protocolCard.classList.remove('hidden'); curriculumProgressWrapper.classList.remove('hidden');
+            protocolClassTitle.textContent = selectedClass.toUpperCase();
+
+            const grade = parseInt(selectedClass);
+            const totalModulesCount = curriculumData[grade] ? curriculumData[grade].length : 0;
+            const classFilteredLogs = collectedLogs.filter(log => log.klasse === selectedClass);
+            const solvedCount = classFilteredLogs.length;
+            const percentage = totalModulesCount > 0 ? (solvedCount / totalModulesCount) * 100 : 0;
+
+            if (topProgressBarFill) topProgressBarFill.style.width = `${percentage}%`;
+            if (classProgressBadge) classProgressBadge.textContent = `${solvedCount} von ${totalModulesCount} erledigt`;
+
+            progressBarText.textContent = `${solvedCount} von ${totalModulesCount} Modulen`;
+            progressBarFill.style.width = `${percentage}%`;
+            counterDisplay.textContent = `${solvedCount} quittierte Module`;
+            
+            if (solvedCount === 0) {
+                logTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Noch keine Quittierungen vorhanden.</td></tr>`;
+                return;
+            }
+
+            logTableBody.innerHTML = '';
+            [...classFilteredLogs].reverse().forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="p-3 font-mono text-brand-orange font-bold text-sm">${log.lehrer}</td><td class="p-3 text-slate-800 font-medium">${log.thema}</td><td class="p-3 text-right text-slate-500 font-mono">${log.datum}</td><td class="p-3 text-center"><button class="text-slate-400 hover:text-red-600 p-1 rounded-md cursor-pointer delete-btn"><i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i></button></td>`;
+                tr.querySelector('.delete-btn').addEventListener('click', () => { isLeseLogDeletion = false; openDeleteModal(log.id, log.thema); });
+                logTableBody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function generatePDF() {
+            const selectedClass = classSelect.value;
+            if (!selectedClass) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const orangeColor = [242, 141, 34]; 
+            const darkSlate = [15, 23, 42];     
+            const lightSlate = [100, 116, 139];  
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text("Mediencurriculum - Entwicklungsbericht", 20, 25);
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(lightSlate[0], lightSlate[1], lightSlate[2]);
+            doc.text("Staatliche Realschule Bessenbach  |  Schuljahr 2025/2026", 20, 32);
+
+            doc.setDrawColor(226, 232, 240);
+            doc.line(20, 36, 190, 36);
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(orangeColor[0], orangeColor[1], orangeColor[2]);
+            doc.text(`Klasse: ${selectedClass.toUpperCase()}`, 20, 46);
+
+            const today = new Date().toLocaleDateString('de-DE');
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(lightSlate[0], lightSlate[1], lightSlate[2]);
+            doc.text(`Erstellt am: ${today}`, 190, 46, { align: "right" });
+
+            const grade = parseInt(selectedClass);
+            const totalModules = curriculumData[grade] ? curriculumData[grade].length : 0;
+            const classFilteredLogs = collectedLogs.filter(log => log.klasse === selectedClass);
+            const solvedCount = classFilteredLogs.length;
+            const percentage = totalModules > 0 ? Math.round((solvedCount / totalModules) * 100) : 0;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+            doc.text(`Gemeinsamer Entwicklungsstand: ${solvedCount} von ${totalModules} Modulen erledigt (${percentage}%)`, 20, 56);
+
+            doc.setDrawColor(203, 213, 225);
+            doc.setFillColor(241, 245, 249);
+            doc.roundedRect(20, 60, 170, 6, 2, 2, "FD");
+
+            if (percentage > 0) {
+                doc.setFillColor(16, 185, 129); 
+                doc.roundedRect(20, 60, (170 * percentage) / 100, 6, 2, 2, "F");
+            }
+
+            let yPos = 80;
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+            doc.text("1. Durchgeführte und quittierte Module", 20, yPos);
+            yPos += 8;
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(20, yPos, 170, 8, "F");
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(51, 65, 85);
+            doc.text("Fach", 22, yPos + 5.5);
+            doc.text("Modulbezeichnung", 45, yPos + 5.5);
+            doc.text("Quittiert von", 130, yPos + 5.5);
+            doc.text("Datum", 160, yPos + 5.5);
+            yPos += 8;
+
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(80, 80, 80);
+
+            if (classFilteredLogs.length === 0) {
+                doc.text("Noch keine Module für diese Klasse quittiert.", 22, yPos + 6);
+                yPos += 12;
+            } else {
+                classFilteredLogs.forEach(log => {
+                    if (yPos > 270) { doc.addPage(); yPos = 20; }
+                    let fach = "";
+                    let name = log.thema;
+                    const match = log.thema.match(/\(([^)]+)\)$/);
+                    if (match) {
+                        fach = match[1];
+                        name = log.thema.substring(0, log.thema.lastIndexOf(" ("));
+                    }
+
+                    doc.setFont("helvetica", "bold");
+                    doc.text(stripEmojis(fach), 22, yPos + 5);
+                    doc.setFont("helvetica", "normal");
+                    
+                    let displayName = name;
+                    if (displayName.length > 42) { displayName = displayName.substring(0, 39) + "..."; }
+                    doc.text(stripEmojis(displayName), 45, yPos + 5);
+                    doc.text(stripEmojis(log.lehrer), 130, yPos + 5);
+                    const dateOnly = log.datum.split(' ')[0] || log.datum;
+                    doc.text(dateOnly, 160, yPos + 5);
+
+                    doc.setDrawColor(241, 245, 249);
+                    doc.line(20, yPos + 8, 190, yPos + 8);
+                    yPos += 8;
+                });
+                yPos += 4;
+            }
+
+            if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+            doc.text("2. Noch ausstehende Module im Mediencurriculum", 20, yPos);
+            yPos += 8;
+
+            doc.setFillColor(241, 245, 249);
+            doc.rect(20, yPos, 170, 8, "F");
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(51, 65, 85);
+            doc.text("Fach", 22, yPos + 5.5);
+            doc.text("Modulbezeichnung / Thema", 45, yPos + 5.5);
+            yPos += 8;
+
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(80, 80, 80);
+
+            const allGradeModules = curriculumData[grade] || [];
+            const openModules = allGradeModules.filter(mod => {
+                const fullModuleName = `${mod.name} (${mod.dept})`;
+                return !classFilteredLogs.some(log => log.thema === fullModuleName);
+            });
+
+            if (openModules.length === 0) {
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(16, 185, 129);
+                doc.text("Die Klasse hat alle Module dieses Jahrgangs erfolgreich absolviert!", 22, yPos + 6);
+                yPos += 12;
+            } else {
+                openModules.forEach(mod => {
+                    if (yPos > 270) { doc.addPage(); yPos = 20; }
+                    doc.setFont("helvetica", "bold");
+                    doc.text(stripEmojis(mod.dept), 22, yPos + 5);
+                    doc.setFont("helvetica", "normal");
+                    let displayName = mod.name;
+                    if (displayName.length > 70) { displayName = displayName.substring(0, 67) + "..."; }
+                    doc.text(stripEmojis(displayName), 45, yPos + 5);
+
+                    doc.setDrawColor(241, 245, 249);
+                    doc.line(20, yPos + 8, 190, yPos + 8);
+                    yPos += 8;
+                });
+            }
+            doc.save(`Mediencurriculum_Bericht_Klasse_${selectedClass.toUpperCase()}.pdf`);
+        }
+
+        function triggerPrintCurriculum() {
+            const selectedSubject = globalSubjectFilter.value;
+            const grades = [5, 6, 7, 8, 9, 10];
+            const filterInfo = selectedSubject === "ALL" ? "Alle Fachschaften" : `Fachschaft: ${selectedSubject}`;
+            const today = new Date().toLocaleDateString('de-DE');
+
+            let html = `
+                <div class="print-header" style="margin-bottom: 20px;">
+                    <h1 style="font-size: 22px; font-weight: bold; color: #0f172a; margin-bottom: 4px;">Mediencurriculum & Lehrplanreferenz</h1>
+                    <p style="font-size: 11px; color: #475569; margin: 0;">Staatliche Realschule Bessenbach &bull; Schuljahr 2025/2026 &bull; Stand: ${today}</p>
+                    <p style="font-size: 11px; font-weight: bold; color: #f28d22; margin-top: 4px;">Ausgedruckter Filter: ${filterInfo}</p>
+                </div>`;
+
+            let hasPrintedAnything = false;
+            grades.forEach(grade => {
+                let modules = curriculumData[grade] || [];
+                if (selectedSubject !== "ALL") { modules = modules.filter(m => m.dept === selectedSubject); }
+                if (modules.length === 0) return;
+                hasPrintedAnything = true;
+
+                const associatedClasses = classesArray.filter(c => c.startsWith(grade.toString()));
+                html += `
+                    <div class="print-no-break">
+                        <div class="print-section-title">Jahrgangsstufe ${grade}</div>
+                        <table class="print-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 8%;">Fach</th>
+                                    <th style="width: 22%;">Rahmenplan-Bereich</th>
+                                    <th style="width: 28%;">Modulbezeichnung / Thema</th>
+                                    <th style="width: 27%;">Didaktische Hinweise</th>
+                                    <th style="width: 15%;">Klassen-Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+                modules.forEach(mod => {
+                    const kmkText = kmkLabels[mod.kmk || "basis"];
+                    const fullModuleName = `${mod.name} (${mod.dept})`;
+                    
+                    let matrixHtml = '<div class="print-class-matrix">';
+                    associatedClasses.forEach(cls => {
+                        const isDone = collectedLogs.some(log => log.klasse === cls && log.thema === fullModuleName);
+                        if (isDone) matrixHtml += `<span class="print-matrix-done">${cls.toUpperCase()}</span>`;
+                        else matrixHtml += `<span class="print-matrix-todo">${cls.toUpperCase()}</span>`;
+                    });
+                    matrixHtml += '</div>';
+
+                    html += `
+                        <tr>
+                            <td><span class="print-badge-orange">${stripEmojis(mod.dept)}</span></td>
+                            <td style="font-size: 11px; font-weight: 500; color: #334155;">${kmkText}</td>
+                            <td style="font-weight: 700; color: #0f172a;">${stripEmojis(mod.name)}</td>
+                            <td style="font-size: 11px; color: #475569; line-height: 1.4;">${stripEmojis(mod.notes || 'Keine schulinternen Hinweise.')}</td>
+                            <td style="vertical-align: middle;">${matrixHtml}</td>
+                        </tr>`;
+                });
+                html += `</tbody></table></div>`;
+            });
+
+            if (!hasPrintedAnything) {
+                html += `<p style="font-style: italic; text-align: center; margin-top: 40px; color: #64748b;">Keine Module für den ausgewählten Filter vorhanden.</p>`;
+            }
+
+            printLayout.innerHTML = html;
+            lucide.createIcons({ attrs: { class: 'lucide' }, nameAttr: 'data-lucide', root: printLayout });
+            window.print();
+        }
+
+        btnLoadMoreSuggestions.addEventListener('click', () => {
+            maxVisibleSuggestions = poolSuggestions.length;
+            renderAdminBoard();
+        });
+
+        btnToTheTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        btnPrintCurriculum.addEventListener('click', triggerPrintCurriculum);
+        document.getElementById('btn-pdf').addEventListener('click', generatePDF);
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
